@@ -1,25 +1,51 @@
 package dev.mlml.korppu.event;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import dev.mlml.korppu.KorppuMod;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EventManager
 {
-    private static final Map<Class<? extends Event>, List<Consumer<Event>>> listeners = new HashMap<>();
+    protected final List<Handler> handlers = new CopyOnWriteArrayList<>();
 
-    public static void register(Class<? extends Event> eventClass, Consumer<Event> listener) {
-        listeners.computeIfAbsent(eventClass, k -> new ArrayList<>()).add(listener);
+    protected void register(Handler handler)
+    {
+        this.handlers.add(handler);
     }
 
-    public static void fire(Event event) {
-        List<Consumer<Event>> eventListeners = listeners.get(event.getClass());
-        if (eventListeners != null) {
-            for (Consumer<Event> listener : eventListeners) {
-                listener.accept(event);
+    protected List<Handler> getSubscribersByType(Class<?> subscriptionType)
+    {
+        return handlers.stream().filter(handler -> handler.subscriptionType.isAssignableFrom(subscriptionType)).toList();
+    }
+
+    public void send(Object ev)
+    {
+        try
+        {
+            Class<?> c = ev.getClass();
+            for (Handler handler : getSubscribersByType(c))
+            {
+                handler.invoke(ev);
             }
+        } catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void unregister(Class<?> i)
+    {
+        this.handlers.removeIf(handler -> handler.subscriptionType.isAssignableFrom(i));
+    }
+
+    public record Handler(Runnable runnable, Class<?> subscriptionType)
+    {
+        public void invoke(Object o) throws InvocationTargetException, IllegalAccessException
+        {
+            runnable.getClass().getDeclaredMethods()[0].invoke(runnable, o);
         }
     }
 }

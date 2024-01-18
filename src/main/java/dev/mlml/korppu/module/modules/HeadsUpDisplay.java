@@ -1,8 +1,8 @@
 package dev.mlml.korppu.module.modules;
 
 import dev.mlml.korppu.KorppuMod;
-import dev.mlml.korppu.gui.screens.HeadsUpDisplayConfigScreen;
 import dev.mlml.korppu.gui.TextFormatter;
+import dev.mlml.korppu.gui.screens.HeadsUpDisplayConfigScreen;
 import dev.mlml.korppu.module.Module;
 import dev.mlml.korppu.module.ModuleManager;
 import net.minecraft.client.gui.DrawContext;
@@ -63,7 +63,7 @@ public class HeadsUpDisplay extends Module
                 TextFormatter.Code.GRAY,
                 KorppuMod.VERSION,
                 KorppuMod.mc.getCurrentFps()
-                ), Corner.TOP_RIGHT, 0);
+        ), Corner.TOP_RIGHT, 0);
     }
 
     @Override

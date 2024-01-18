@@ -13,8 +13,7 @@ public abstract class GenericSetting<V>
     @Getter
     public final String tooltip;
 
-    @Getter
-    final V defaultValue;
+    @Getter final V defaultValue;
     final List<Consumer<V>> callbacks;
 
     @Getter

@@ -3,29 +3,20 @@ package dev.mlml.korppu.module.modules;
 import dev.mlml.korppu.KorppuMod;
 import dev.mlml.korppu.gui.screens.FlightConfigScreen;
 import dev.mlml.korppu.module.Module;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.option.GameOptions;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.Vec3d;
 import org.lwjgl.glfw.GLFW;
 
 public class Flight extends Module
 {
-    private final KeyBinding cycleKeybind;
-    private final KeyBinding speedUpKeybind;
-    private final KeyBinding speedDownKeybind;
-    public Mode mode = Mode.Vanilla;
+    public Mode mode = Mode.Ability;
     public double speed = 1.0;
+    private boolean wasFlying = false;
 
     public Flight()
     {
         super("Flight", "Allows you to fly", ModuleType.PLAYER, GLFW.GLFW_KEY_Z);
-
-        cycleKeybind = new KeyBinding("key.korppumod.flight_cycle", GLFW.GLFW_KEY_UNKNOWN, "category.korppumod");
-        KeyBindingHelper.registerKeyBinding(cycleKeybind);
-        speedUpKeybind = new KeyBinding("key.korppumod.flight_speed_up", GLFW.GLFW_KEY_UNKNOWN, "category.korppumod");
-        KeyBindingHelper.registerKeyBinding(speedUpKeybind);
-        speedDownKeybind = new KeyBinding("key.korppumod.flight_speed_down", GLFW.GLFW_KEY_UNKNOWN, "category.korppumod");
-        KeyBindingHelper.registerKeyBinding(speedDownKeybind);
     }
 
     public void cycleMode()
@@ -50,18 +41,64 @@ public class Flight extends Module
     }
 
     @Override
-    public void onTick() {
-        if (cycleKeybind.wasPressed())
+    public void onTick()
+    {
+        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null || KorppuMod.mc.getNetworkHandler() == null)
         {
-            cycleMode();
+            return;
         }
-        if (speedUpKeybind.wasPressed())
+
+        switch (mode)
         {
-            speedUp();
+            case Ability:
+                KorppuMod.mc.player.getAbilities().setFlySpeed((float) speed);
+                KorppuMod.mc.player.getAbilities().allowFlying = true;
+                break;
+            case Velocity:
+                GameOptions options = KorppuMod.mc.options;
+                float yaw = KorppuMod.mc.player.getYaw();
+                int dx = Boolean.compare(options.rightKey.isPressed(), options.leftKey.isPressed());
+                int dy = Boolean.compare(options.jumpKey.isPressed(), options.sneakKey.isPressed());
+                int dz = Boolean.compare(options.backKey.isPressed(), options.forwardKey.isPressed());
+
+                double s = Math.sin(Math.toRadians(yaw));
+                double c = Math.cos(Math.toRadians(yaw));
+
+                double nx = speed * (dz * s + dx * -c);
+                double nz = speed * (dz * -c + dx * -s);
+                double ny = speed * dy;
+
+                KorppuMod.mc.player.setVelocity(new Vec3d(nx, ny, nz));
+                break;
         }
-        if (speedDownKeybind.wasPressed())
+
+        if (mode != Mode.Ability)
         {
-            speedDown();
+            KorppuMod.mc.player.getAbilities().allowFlying = wasFlying;
+        }
+    }
+
+    public void onEnable()
+    {
+        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null || KorppuMod.mc.getNetworkHandler() == null)
+        {
+            return;
+        }
+        wasFlying = KorppuMod.mc.player.getAbilities().flying;
+    }
+
+    @Override
+    public void onDisable()
+    {
+        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null || KorppuMod.mc.getNetworkHandler() == null)
+        {
+            return;
+        }
+
+        if (mode == Mode.Ability)
+        {
+            KorppuMod.mc.player.getAbilities().setFlySpeed(0.05f);
+            KorppuMod.mc.player.getAbilities().allowFlying = wasFlying;
         }
     }
 
@@ -73,16 +110,17 @@ public class Flight extends Module
 
     public enum Mode
     {
-        Vanilla,
-        Packet;
+        Ability,
+        Velocity;
 
-        public Text getSimpleTranslatableName() {
-            return Text.literal(this.getClass().getSimpleName());
+        public Text getSimpleTranslatableName()
+        {
+            return Text.literal(this.name());
         }
 
         public String getIntial()
         {
-            return this.getClass().getSimpleName().substring(0, 1);
+            return this.name().substring(0, 1);
         }
     }
 }

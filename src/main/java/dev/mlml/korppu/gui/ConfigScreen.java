@@ -20,7 +20,8 @@ public class ConfigScreen extends Screen
         super(Text.literal(name));
     }
 
-    protected List<ClickableWidget> makeElements() {
+    protected List<ClickableWidget> makeElements()
+    {
         return List.of();
     }
 

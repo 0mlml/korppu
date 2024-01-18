@@ -17,12 +17,14 @@ public class HeadsUpDisplayConfigScreen extends ConfigScreen
     private final HeadsUpDisplay module;
     private final ButtonWidget showWatermarkButton;
 
-    public HeadsUpDisplayConfigScreen(HeadsUpDisplay m) {
+    public HeadsUpDisplayConfigScreen(HeadsUpDisplay m)
+    {
         super("KorppuMod HeadsUpDisplay Config");
 
         this.module = m;
 
-        showWatermarkButton = ButtonWidget.builder(Text.literal(String.format("Show Watermark: %s", module.showWatermark ? "yes" : "no")), button -> {
+        showWatermarkButton = ButtonWidget.builder(Text.literal(String.format("Show Watermark: %s", module.showWatermark ? "yes" : "no")), button ->
+                {
                     module.showWatermark = !module.showWatermark;
                     button.setMessage(Text.literal(String.format("Show Watermark: %s", module.showWatermark ? "yes" : "no")));
                 })

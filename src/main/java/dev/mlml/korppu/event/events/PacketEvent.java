@@ -6,17 +6,22 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.packet.Packet;
 
-@Getter
-@Setter
-@AllArgsConstructor
-public class PacketEvent extends Event
-{
-    Packet<?> packet;
-    Type type;
 
-    public enum Type
-    {
-        INBOUND,
-        OUTBOUND
+@Setter
+@Getter
+@AllArgsConstructor
+public abstract class PacketEvent extends Event {
+    Packet<?> packet;
+
+    public static class Received extends PacketEvent {
+        public Received(Packet<?> packet) {
+            super(packet);
+        }
+    }
+
+    public static class Sent extends PacketEvent {
+        public Sent(Packet<?> packet) {
+            super(packet);
+        }
     }
 }

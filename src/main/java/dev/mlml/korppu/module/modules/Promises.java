@@ -1,4 +1,5 @@
 package dev.mlml.korppu.module.modules;
 
-public class Promises {
+public class Promises
+{
 }

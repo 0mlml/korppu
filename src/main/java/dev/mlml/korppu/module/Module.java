@@ -1,7 +1,6 @@
 package dev.mlml.korppu.module;
 
 import lombok.Getter;
-import lombok.Setter;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -21,7 +20,6 @@ public class Module
     @Getter
     private final KeyBinding keybind;
     @Getter
-    @Setter
     private boolean enabled;
 
     public Module(String name, String description, ModuleType type, int
@@ -43,6 +41,23 @@ public class Module
     {
     }
 
+    public void setEnabled(boolean enabled)
+    {
+        this.enabled = enabled;
+        if (enabled)
+        {
+            onEnable();
+        } else
+        {
+            onDisable();
+        }
+    }
+
+    public void toggle()
+    {
+        setEnabled(!isEnabled());
+    }
+
     public void update(MinecraftClient mc)
     {
         if (keybind.wasPressed())
@@ -52,7 +67,7 @@ public class Module
                 handleShiftPress();
             } else
             {
-                setEnabled(!isEnabled());
+                toggle();
             }
         }
 
@@ -89,7 +104,8 @@ public class Module
         return "";
     }
 
-    public void handleShiftPress() {
+    public void handleShiftPress()
+    {
         setEnabled(!isEnabled());
     }
 

@@ -9,7 +9,8 @@ public class Event
     @Setter
     protected boolean cancelled;
 
-    public void cancel() {
+    public void cancel()
+    {
         this.cancelled = true;
     }
 }

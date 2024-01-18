@@ -20,10 +20,13 @@ public class KorppuMod implements ModInitializer
 
     private static Thread FAST_TICKER;
 
-    private static void sleep_(int ms) {
-        try {
+    private static void sleep_(int ms)
+    {
+        try
+        {
             Thread.sleep(ms);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException e)
+        {
             LOGGER.warn("Interrupted while sleeping");
         }
     }
@@ -38,20 +41,27 @@ public class KorppuMod implements ModInitializer
         LOGGER.info("Binding ConfigScreen");
         KeyBinding configScreenKeybind = new KeyBinding("key.korppumod.config_screen", GLFW.GLFW_KEY_MINUS, "category.korppumod");
         KeyBindingHelper.registerKeyBinding(configScreenKeybind);
-        ClientTickEvents.START_CLIENT_TICK.register(client -> {
-            if (configScreenKeybind.wasPressed()) {
+        ClientTickEvents.START_CLIENT_TICK.register(client ->
+        {
+            if (configScreenKeybind.wasPressed())
+            {
                 mc.setScreen(new ClientConfigScreen());
             }
         });
         LOGGER.info("Starting fast ticker");
-        FAST_TICKER = new Thread(() -> {
-            while (true) {
+        FAST_TICKER = new Thread(() ->
+        {
+            while (true)
+            {
                 sleep_(10);
-                if (mc.player == null || mc.world == null) {
+                if (mc.player == null || mc.world == null)
+                {
                     continue;
                 }
-                ModuleManager.getModules().forEach(module -> {
-                    if (module.isEnabled()) {
+                ModuleManager.getModules().forEach(module ->
+                {
+                    if (module.isEnabled())
+                    {
                         module.onTick();
                     }
                 });
