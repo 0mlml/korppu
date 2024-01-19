@@ -1,5 +1,8 @@
 package dev.mlml.korppu.module;
 
+import dev.mlml.korppu.KorppuMod;
+import dev.mlml.korppu.config.Config;
+import dev.mlml.korppu.gui.ConfigScreen;
 import lombok.Getter;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
@@ -8,6 +11,9 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.world.ClientWorld;
 import org.lwjgl.glfw.GLFW;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Module
 {
@@ -20,6 +26,9 @@ public class Module
     @Getter
     private final KeyBinding keybind;
     @Getter
+    private final Map<Integer, Boolean> modifierKeyStates;
+    @Getter protected Config config;
+    @Getter
     private boolean enabled;
 
     public Module(String name, String description, ModuleType type, int
@@ -31,6 +40,21 @@ public class Module
 
         keybind = new KeyBinding("key.korppumod." + name.replaceAll(" ", "").toLowerCase() + "_toggle",
                 key, "category.korppumod");
+
+        config = new Config();
+
+        modifierKeyStates = new HashMap<>();
+        initializeStates();
+    }
+
+    private void initializeStates()
+    {
+        int[] keys = new int[]{GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT, GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL, GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT};
+
+        for (int key : keys)
+        {
+            modifierKeyStates.put(key, false);
+        }
     }
 
     public void onEnable()
@@ -60,14 +84,23 @@ public class Module
 
     public void update(MinecraftClient mc)
     {
+        initializeStates();
         if (keybind.wasPressed())
         {
-            if (InputUtil.isKeyPressed(mc.getWindow().getHandle(), GLFW.GLFW_KEY_RIGHT_SHIFT))
+            modifierKeyStates.forEach((keyCode, value) ->
             {
-                handleShiftPress();
+                boolean isPressed = InputUtil.isKeyPressed(mc.getWindow().getHandle(), keyCode);
+                modifierKeyStates.put(keyCode, isPressed);
+            });
+            if (modifierKeyStates.get(GLFW.GLFW_KEY_RIGHT_SHIFT))
+            {
+                KorppuMod.mc.setScreen(new ConfigScreen(this));
             } else
             {
-                toggle();
+                if (!modifierKeyStates.containsValue(true))
+                {
+                    toggle();
+                }
             }
         }
 
@@ -102,11 +135,6 @@ public class Module
     public String getStatus()
     {
         return "";
-    }
-
-    public void handleShiftPress()
-    {
-        setEnabled(!isEnabled());
     }
 
     public enum ModuleType

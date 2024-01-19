@@ -1,24 +1,36 @@
 package dev.mlml.korppu;
 
-import dev.mlml.korppu.gui.screens.ClientConfigScreen;
+import dev.mlml.korppu.event.EventManager;
+import dev.mlml.korppu.gui.TextFormatter;
 import dev.mlml.korppu.module.ModuleManager;
+import lombok.Getter;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.glfw.GLFW;
 
 public class KorppuMod implements ModInitializer
 {
     public static final String VERSION = "0.1.0";
 
     public static final Logger LOGGER = LogManager.getLogger("Korppu");
+    @Getter
+    private static final boolean sendPackets = true;
     public static MinecraftClient mc;
-
+    public static EventManager eventManager;
     private static Thread FAST_TICKER;
+
+    public static void addToChat(String... message)
+    {
+        String prefix = TextFormatter.format("[%2%3Korppu%1] ",
+                TextFormatter.Code.RESET,
+                TextFormatter.Code.BOLD,
+                TextFormatter.Code.GRAY);
+        for (String m : message)
+        {
+            mc.inGameHud.getChatHud().addToMessageHistory(prefix + m);
+        }
+    }
 
     private static void sleep_(int ms)
     {
@@ -36,18 +48,10 @@ public class KorppuMod implements ModInitializer
     {
         LOGGER.info("Initializing Korppu");
         mc = MinecraftClient.getInstance();
+        LOGGER.info("Initializing Events");
+        eventManager = new EventManager();
         LOGGER.info("Initializing Modules");
         ModuleManager.init();
-        LOGGER.info("Binding ConfigScreen");
-        KeyBinding configScreenKeybind = new KeyBinding("key.korppumod.config_screen", GLFW.GLFW_KEY_MINUS, "category.korppumod");
-        KeyBindingHelper.registerKeyBinding(configScreenKeybind);
-        ClientTickEvents.START_CLIENT_TICK.register(client ->
-        {
-            if (configScreenKeybind.wasPressed())
-            {
-                mc.setScreen(new ClientConfigScreen());
-            }
-        });
         LOGGER.info("Starting fast ticker");
         FAST_TICKER = new Thread(() ->
         {
@@ -62,7 +66,7 @@ public class KorppuMod implements ModInitializer
                 {
                     if (module.isEnabled())
                     {
-                        module.onTick();
+                        module.onFastTick();
                     }
                 });
             }

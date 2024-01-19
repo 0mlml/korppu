@@ -10,17 +10,22 @@ import net.minecraft.network.packet.Packet;
 @Setter
 @Getter
 @AllArgsConstructor
-public abstract class PacketEvent extends Event {
+public abstract class PacketEvent extends Event
+{
     Packet<?> packet;
 
-    public static class Received extends PacketEvent {
-        public Received(Packet<?> packet) {
+    public static class Received extends PacketEvent
+    {
+        public Received(Packet<?> packet)
+        {
             super(packet);
         }
     }
 
-    public static class Sent extends PacketEvent {
-        public Sent(Packet<?> packet) {
+    public static class Sent extends PacketEvent
+    {
+        public Sent(Packet<?> packet)
+        {
             super(packet);
         }
     }

@@ -1,8 +1,8 @@
 package dev.mlml.korppu.module.modules;
 
 import dev.mlml.korppu.KorppuMod;
+import dev.mlml.korppu.config.BooleanSetting;
 import dev.mlml.korppu.gui.TextFormatter;
-import dev.mlml.korppu.gui.screens.HeadsUpDisplayConfigScreen;
 import dev.mlml.korppu.module.Module;
 import dev.mlml.korppu.module.ModuleManager;
 import net.minecraft.client.gui.DrawContext;
@@ -12,7 +12,9 @@ import java.util.List;
 
 public class HeadsUpDisplay extends Module
 {
-    public boolean showWatermark = true;
+    private final BooleanSetting showWatermark = config.add(new BooleanSetting("Show Watermark", "Shows the Korppu watermark", true));
+    // TODO
+    // private final MultiListSetting<Something> exclusions = config.add(new MultiListSetting<>("Exclusions", "Excludes modules from being displayed", Something.class));
 
     public HeadsUpDisplay()
     {
@@ -53,7 +55,7 @@ public class HeadsUpDisplay extends Module
             renderText(drawContext, format, Corner.TOP_LEFT, modules.indexOf(m));
         }
 
-        if (!showWatermark)
+        if (!showWatermark.getValue())
         {
             return;
         }
@@ -77,13 +79,6 @@ public class HeadsUpDisplay extends Module
                 TextFormatter.Code.RED,
                 ModuleManager.getModules().size() - enabled);
     }
-
-    @Override
-    public void handleShiftPress()
-    {
-        KorppuMod.mc.setScreen(new HeadsUpDisplayConfigScreen(this));
-    }
-
 
     private enum Corner
     {

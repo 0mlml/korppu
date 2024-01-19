@@ -1,51 +1,56 @@
 package dev.mlml.korppu.event;
 
-import dev.mlml.korppu.KorppuMod;
-
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.*;
 
 public class EventManager
 {
-    protected final List<Handler> handlers = new CopyOnWriteArrayList<>();
+    protected final Map<Class<?>, Set<Handler<?>>> handlers = new HashMap<>();
 
-    protected void register(Handler handler)
+    public void register(Object listener)
     {
-        this.handlers.add(handler);
-    }
-
-    protected List<Handler> getSubscribersByType(Class<?> subscriptionType)
-    {
-        return handlers.stream().filter(handler -> handler.subscriptionType.isAssignableFrom(subscriptionType)).toList();
-    }
-
-    public void send(Object ev)
-    {
-        try
+        for (Method method : listener.getClass().getDeclaredMethods())
         {
-            Class<?> c = ev.getClass();
-            for (Handler handler : getSubscribersByType(c))
+            if (isEventHandlerMethod(method))
             {
-                handler.invoke(ev);
+                Class<?> eventType = method.getParameterTypes()[0];
+                registerHandlerMethod(listener, method, eventType);
             }
-        } catch (Exception e)
-        {
-            throw new RuntimeException(e);
         }
     }
 
-    public void unregister(Class<?> i)
+    private boolean isEventHandlerMethod(Method method)
     {
-        this.handlers.removeIf(handler -> handler.subscriptionType.isAssignableFrom(i));
+        return method.getParameterCount() == 1
+                && Event.class.isAssignableFrom(method.getParameterTypes()[0]);
     }
 
-    public record Handler(Runnable runnable, Class<?> subscriptionType)
+    private void registerHandlerMethod(Object listener, Method method, Class<?> eventType)
     {
-        public void invoke(Object o) throws InvocationTargetException, IllegalAccessException
+        Handler<?> handler = event ->
         {
-            runnable.getClass().getDeclaredMethods()[0].invoke(runnable, o);
+            try
+            {
+                method.invoke(listener, event);
+            } catch (Exception e)
+            {
+                //noinspection CallToPrintStackTrace
+                e.printStackTrace();
+            }
+        };
+        handlers.computeIfAbsent(eventType, k -> new HashSet<>() {}).add(handler);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <E extends Event> void trigger(E event)
+    {
+        Set<Handler<?>> eventHandlers = handlers.get(event.getClass());
+        if (eventHandlers != null)
+        {
+            for (Handler<?> handler : eventHandlers)
+            {
+                ((Handler<E>) handler).handle(event);
+            }
         }
     }
 }

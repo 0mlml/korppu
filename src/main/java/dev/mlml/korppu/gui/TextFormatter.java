@@ -48,7 +48,6 @@ public class TextFormatter
             return String.format(formatted, fmtArgs.toArray());
         } catch (Exception e)
         {
-            KorppuMod.LOGGER.error("Failed to format text: " + text, e.getMessage());
             return formatted;
         }
     }
@@ -76,7 +75,8 @@ public class TextFormatter
         STRIKETHROUGH("m"),
         UNDERLINE("n"),
         ITALIC("o"),
-        RESET("r");
+        RESET("r"),
+        SECTION("§");
 
         private final String code;
 
