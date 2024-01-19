@@ -5,6 +5,7 @@ import dev.mlml.korppu.config.BooleanSetting;
 import dev.mlml.korppu.config.DoubleSetting;
 import dev.mlml.korppu.event.events.PacketEvent;
 import dev.mlml.korppu.gui.TextFormatter;
+import dev.mlml.korppu.misc.FakePlayerEntity;
 import dev.mlml.korppu.module.Module;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
@@ -25,7 +26,9 @@ public class Backtrack extends Module
     private final List<PlayerMoveC2SPacket> betweenJumpPackets = new ArrayList<>();
     private final boolean seekKeyPressHandled = false;
     private boolean catchingUp = false;
-    private boolean bypassDisableFunction = false;
+    private boolean dontRestoreOnDisable = false;
+
+    private FakePlayerEntity fakePlayer;
 
     public Backtrack()
     {
@@ -52,6 +55,8 @@ public class Backtrack extends Module
     public void onEnable()
     {
         KorppuMod.addToChat("Backtrack enabled");
+
+        fakePlayer = new FakePlayerEntity();
     }
 
     private void seekBack()
@@ -111,9 +116,12 @@ public class Backtrack extends Module
     @Override
     public void onDisable()
     {
-        if (bypassDisableFunction)
+        fakePlayer.resetPlayerPosition();
+        fakePlayer.despawn();
+
+        if (dontRestoreOnDisable)
         {
-            bypassDisableFunction = false;
+            dontRestoreOnDisable = false;
             packetBacklog.clear();
             return;
         }
@@ -153,6 +161,12 @@ public class Backtrack extends Module
         if (getModifierKeyStates().get(GLFW.GLFW_KEY_LEFT_CONTROL))
         {
             catchingUp = true;
+            fakePlayer.updatePositionAndAngles(
+                    KorppuMod.mc.player.getX(),
+                    KorppuMod.mc.player.getY(),
+                    KorppuMod.mc.player.getZ(),
+                    KorppuMod.mc.player.getYaw(),
+                    KorppuMod.mc.player.getPitch());
         }
 
         if (catchingUp)
@@ -160,7 +174,7 @@ public class Backtrack extends Module
             if (packetBacklog.isEmpty())
             {
                 catchingUp = false;
-                bypassDisableFunction = true;
+                dontRestoreOnDisable = true;
                 setEnabled(false);
                 return;
             }
@@ -196,6 +210,16 @@ public class Backtrack extends Module
         int packetId = generatePacketIdentifier(packet);
         sentPackets.add(packetId);
 
+        if (!catchingUp)
+        {
+            fakePlayer.updatePositionAndAngles(
+                    packet.getX(fakePlayer.getX()),
+                    packet.getY(fakePlayer.getY()),
+                    packet.getZ(fakePlayer.getZ()),
+                    packet.getYaw(fakePlayer.getYaw()),
+                    packet.getPitch(fakePlayer.getPitch()));
+        }
+
         connection.send(packet);
     }
 
@@ -208,16 +232,19 @@ public class Backtrack extends Module
         if (catchingUp)
         {
             message = "Replaying";
-        } else if (isEnabled())
+        } else
         {
-            if (packetBacklog.size() < maxItems.getValue())
+            if (isEnabled())
             {
-                message = "Standby";
-            } else
-            {
-                if (packetBacklog.size() == maxItems.getValue())
+                if (packetBacklog.size() < maxItems.getValue())
                 {
-                    message = "Trailing";
+                    message = "Standby";
+                } else
+                {
+                    if (packetBacklog.size() == maxItems.getValue())
+                    {
+                        message = "Trailing";
+                    }
                 }
             }
         }

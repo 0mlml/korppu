@@ -24,6 +24,7 @@ public class ModuleManager
         modules.add(new NoFall());
         modules.add(new EdgeJump());
         modules.add(new Backtrack());
+        modules.add(new Freecam());
 
         for (Module m : modules)
         {

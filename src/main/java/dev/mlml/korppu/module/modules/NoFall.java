@@ -12,7 +12,7 @@ import org.lwjgl.glfw.GLFW;
 
 public class NoFall extends Module
 {
-    private final ListSetting<Mode> mode = config.add(new ListSetting<Mode>("Mode", "The mode of stopping fall damage", Mode.Packet));
+    private final ListSetting<Mode> mode = config.add(new ListSetting<Mode>("Mode", "Method", Mode.Packet));
     private final DoubleSetting fallDistance = config.add(new DoubleSetting("Fall Distance", "The distance you can fall before triggering", 2.0, 1.0, 10.0, 1));
     private boolean hasSentOnGround = false;
 

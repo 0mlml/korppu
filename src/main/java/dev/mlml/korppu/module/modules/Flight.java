@@ -35,7 +35,7 @@ public class Flight extends Module
     {
         if (verboseStatus.getValue())
         {
-            return String.format("%s, %s, %s", mode.getValue().name().charAt(0), speed.getValue(), bypassVanillaAc.getValue() ? "Bypass" : "--");
+            return String.format("%s, %s, %s", mode.getValue().name().charAt(0), speed.getValue(), bypassVanillaAc.getValue() ? "Bypass" : "Hover");
         }
         return String.format("%s, %s", mode.getValue().name().charAt(0), speed.getValue());
     }
