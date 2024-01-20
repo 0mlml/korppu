@@ -2,6 +2,7 @@ package dev.mlml.korppu.misc;
 
 import dev.mlml.korppu.KorppuMod;
 import dev.mlml.korppu.event.events.PacketEvent;
+import dev.mlml.korppu.module.ModuleManager;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
@@ -28,31 +29,6 @@ public class Rotations
 
     static
     {
-        class RotationsPacketHandler
-        {
-            public void onPacketSend(PacketEvent.Sent event)
-            {
-                if (event.getPacket() instanceof PlayerMoveC2SPacket packet)
-                {
-                    clientYaw = packet.getYaw(clientYaw);
-                    clientPitch = packet.getPitch(clientPitch);
-                    if (!event.isCancelled())
-                    {
-                        lastKnownServerPos = new Vec3d(packet.getX(lastKnownServerPos.x), packet.getY(lastKnownServerPos.y), packet.getZ(lastKnownServerPos.z));
-                    }
-                }
-            }
-
-            public void onPacketReceive(PacketEvent.Received pe)
-            {
-                if (pe.getPacket() instanceof PlayerPositionLookS2CPacket p)
-                {
-                    clientYaw = p.getYaw();
-                    clientPitch = p.getPitch();
-                }
-            }
-        }
-
         KorppuMod.eventManager.register(new RotationsPacketHandler());
     }
 
@@ -252,5 +228,40 @@ public class Rotations
     {
         enabled = false;
         targetV3 = null;
+    }
+
+    public static class RotationsPacketHandler
+    {
+        public void onPacketSend(PacketEvent.Sent event)
+        {
+            if (!enabled || !ModuleManager.isSendPackets())
+            {
+                return;
+            }
+
+            if (event.getPacket() instanceof PlayerMoveC2SPacket packet)
+            {
+                clientYaw = packet.getYaw(clientYaw);
+                clientPitch = packet.getPitch(clientPitch);
+                if (!event.isCancelled())
+                {
+                    lastKnownServerPos = new Vec3d(packet.getX(lastKnownServerPos.x), packet.getY(lastKnownServerPos.y), packet.getZ(lastKnownServerPos.z));
+                }
+            }
+        }
+
+        public void onPacketReceive(PacketEvent.Received pe)
+        {
+            if (!enabled)
+            {
+                return;
+            }
+
+            if (pe.getPacket() instanceof PlayerPositionLookS2CPacket p)
+            {
+                clientYaw = p.getYaw();
+                clientPitch = p.getPitch();
+            }
+        }
     }
 }

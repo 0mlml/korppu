@@ -51,7 +51,7 @@ public class InstaBow extends Module
         BowItem bowItem = (BowItem) KorppuMod.mc.player.getMainHandStack().getItem();
         int pullback = bowItem.getMaxUseTime(KorppuMod.mc.player.getMainHandStack()) - KorppuMod.mc.player.getItemUseTimeLeft();
 
-        if (BowItem.getPullProgress(pullback) < 0.1f)
+        if (BowItem.getPullProgress(pullback) < 0.2f)
         {
             return;
         }
@@ -94,6 +94,11 @@ public class InstaBow extends Module
         Rotations.lookAtV3(bestTarget.getPos().add(0, bestTarget.getHeight() / 2f, 0));
         Objects.requireNonNull(KorppuMod.mc.getNetworkHandler()).sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(Rotations.getClientYaw(), Rotations.getClientPitch(), KorppuMod.mc.player.isOnGround()));
         Objects.requireNonNull(KorppuMod.mc.interactionManager).stopUsingItem(KorppuMod.mc.player);
+    }
+
+    @Override
+    public String getStatus() {
+        return (int) (charge.getValue() + 0) + "it";
     }
 
     public class InstaBowPacketHandler
