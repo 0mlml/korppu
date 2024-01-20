@@ -25,6 +25,10 @@ public class ModuleManager
         modules.add(new EdgeJump());
         modules.add(new Backtrack());
         modules.add(new Freecam());
+        modules.add(new FastMine());
+        modules.add(new InstaBow());
+        modules.add(new PingSpoof());
+        modules.add(new Passives());
 
         for (Module m : modules)
         {
@@ -35,6 +39,11 @@ public class ModuleManager
         }
 
         KorppuMod.LOGGER.info("Initialized " + modules.size() + " modules");
+    }
+
+    public static boolean isSendPackets() {
+        Passives passives = (Passives) getModule(Passives.class);
+        return passives != null && passives.getSendPackets().getValue();
     }
 
     public static Module getModule(Class<? extends Module> moduleClass)

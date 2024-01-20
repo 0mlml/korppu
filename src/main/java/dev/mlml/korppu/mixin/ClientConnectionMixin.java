@@ -34,7 +34,7 @@ public class ClientConnectionMixin
     @Redirect(method = "send(Lnet/minecraft/network/packet/Packet;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/ClientConnection;send(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/PacketCallbacks;)V"))
     void replacePacket_(ClientConnection instance, Packet<?> packet, PacketCallbacks callbacks)
     {
-        if (!KorppuMod.isSendPackets())
+        if (!ModuleManager.isSendPackets())
         {
             return;
         }

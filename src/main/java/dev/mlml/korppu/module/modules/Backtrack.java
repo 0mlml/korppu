@@ -7,6 +7,7 @@ import dev.mlml.korppu.event.events.PacketEvent;
 import dev.mlml.korppu.gui.TextFormatter;
 import dev.mlml.korppu.misc.FakePlayerEntity;
 import dev.mlml.korppu.module.Module;
+import dev.mlml.korppu.module.ModuleManager;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.util.math.Vec3d;
@@ -195,7 +196,7 @@ public class Backtrack extends Module
 
     private void sendPacket(PlayerMoveC2SPacket packet)
     {
-        if (!KorppuMod.isSendPackets())
+        if (!ModuleManager.isSendPackets())
         {
             return;
         }

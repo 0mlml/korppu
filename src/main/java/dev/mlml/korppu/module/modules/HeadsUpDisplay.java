@@ -73,7 +73,7 @@ public class HeadsUpDisplay extends Module
     {
         int enabled = ModuleManager.getModules().stream().filter(Module::isEnabled).toArray().length;
 
-        return TextFormatter.format("%1%s|%2%s",
+        return TextFormatter.format("%1%s | %2%s",
                 TextFormatter.Code.GREEN,
                 enabled,
                 TextFormatter.Code.RED,

@@ -14,8 +14,7 @@ public class KorppuMod implements ModInitializer
     public static final String VERSION = "0.1.0";
 
     public static final Logger LOGGER = LogManager.getLogger("Korppu");
-    @Getter
-    private static final boolean sendPackets = true;
+
     public static MinecraftClient mc;
     public static EventManager eventManager;
     private static Thread FAST_TICKER;
