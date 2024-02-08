@@ -8,7 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class ShouldChunkRender extends Event
-{
+public class ShouldChunkRender extends Event {
     boolean shouldRender = false;
 }

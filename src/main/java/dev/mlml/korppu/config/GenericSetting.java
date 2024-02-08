@@ -13,8 +13,7 @@ import java.util.function.Consumer;
 
 @Getter
 @Setter
-public abstract class GenericSetting<V>
-{
+public abstract class GenericSetting<V> {
     protected final String name;
     protected final String tooltip;
     final V defaultValue;
@@ -23,8 +22,7 @@ public abstract class GenericSetting<V>
     @Setter
     V value;
 
-    public GenericSetting(String name, String tooltip, V defaultValue, List<Consumer<V>> callbacks)
-    {
+    public GenericSetting(String name, String tooltip, V defaultValue, List<Consumer<V>> callbacks) {
         this.name = name;
         this.tooltip = tooltip;
         this.label = name;
@@ -34,19 +32,25 @@ public abstract class GenericSetting<V>
         this.callbacks = callbacks;
     }
 
-    public Text asText()
-    {
+    public String[] serialize() {
+        return new String[]{"g", name, value.toString()};
+    }
+
+    @SuppressWarnings("unchecked")
+    public void deserialize(String value) {
+        this.value = (V) value;
+    }
+
+    public Text asText() {
         return Text.literal(String.format("%s: %s", name, value));
     }
 
-    public ClickableWidget getAsWidget()
-    {
-        return ButtonWidget.builder(Text.literal(name), button ->
-                {
-                    System.out.printf("%s clicked%n", name);
-                })
-                .dimensions(0, 0, ConfigScreen.DEFAULT_WIDTH, ConfigScreen.DEFAULT_HEIGHT)
-                .tooltip(Tooltip.of(Text.literal(tooltip)))
-                .build();
+    public ClickableWidget getAsWidget() {
+        return ButtonWidget.builder(Text.literal(name), button -> {
+                               System.out.printf("%s clicked%n", name);
+                           })
+                           .dimensions(0, 0, ConfigScreen.DEFAULT_WIDTH, ConfigScreen.DEFAULT_HEIGHT)
+                           .tooltip(Tooltip.of(Text.literal(tooltip)))
+                           .build();
     }
 }

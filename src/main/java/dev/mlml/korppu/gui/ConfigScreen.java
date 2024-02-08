@@ -12,8 +12,7 @@ import net.minecraft.text.Text;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConfigScreen extends Screen
-{
+public class ConfigScreen extends Screen {
     public static final int DEFAULT_WIDTH = 150;
     public static final int DEFAULT_HEIGHT = 20;
     public static final int GAPS = 4;
@@ -24,15 +23,13 @@ public class ConfigScreen extends Screen
     private final Module module;
     List<SettingLabel> texts = new ArrayList<>();
 
-    public ConfigScreen(Module module)
-    {
+    public ConfigScreen(Module module) {
         super(Text.literal(module.getName()));
         this.module = module;
     }
 
     @Override
-    public void init()
-    {
+    public void init() {
         super.init();
 
         int x = GAPS;
@@ -41,12 +38,10 @@ public class ConfigScreen extends Screen
         List<GenericSetting<?>> settings = module.getConfig().getSettings();
 
         int maxHeight = 0;
-        for (GenericSetting<?> s : settings)
-        {
+        for (GenericSetting<?> s : settings) {
             ClickableWidget e = s.getAsWidget();
 
-            if (x + e.getWidth() > MAX_WIDTH)
-            {
+            if (x + e.getWidth() > MAX_WIDTH) {
                 x = GAPS;
                 y += maxHeight + GAPS;
                 maxHeight = 0;
@@ -54,8 +49,7 @@ public class ConfigScreen extends Screen
 
             texts.add(new SettingLabel(s.getLabel(), x, y));
 
-            if (e.getHeight() + textRenderer.fontHeight + GAPS / 2 > maxHeight)
-            {
+            if (e.getHeight() + textRenderer.fontHeight + GAPS / 2 > maxHeight) {
                 maxHeight = e.getHeight() + textRenderer.fontHeight + GAPS / 2;
             }
 
@@ -68,26 +62,22 @@ public class ConfigScreen extends Screen
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta)
-    {
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         super.render(context, mouseX, mouseY, delta);
         String s = module.getName() + " config screen";
         context.drawCenteredTextWithShadow(textRenderer, Text.literal(s), width - textRenderer.getWidth(s) / 2 - GAPS, GAPS, 0xffffff);
 
-        for (SettingLabel t : texts)
-        {
+        for (SettingLabel t : texts) {
             context.drawCenteredTextWithShadow(textRenderer, Text.literal(t.text), t.x + textRenderer.getWidth(t.text) / 2, t.y, 0xffffff);
         }
     }
 
-    private static class SettingLabel
-    {
+    private static class SettingLabel {
         String text;
         int x;
         int y;
 
-        public SettingLabel(String text, int x, int y)
-        {
+        public SettingLabel(String text, int x, int y) {
             this.text = text;
             this.x = x;
             this.y = y;

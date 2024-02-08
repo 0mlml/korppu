@@ -13,16 +13,13 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import java.util.Objects;
 
 @Mixin(LivingEntity.class)
-public class LivingEntityMixin
-{
+public class LivingEntityMixin {
     @Redirect(method = "travel", at = @At(value = "INVOKE", target = "net/minecraft/entity/LivingEntity.hasStatusEffect(Lnet/minecraft/entity/effect/StatusEffect;)Z"), require = 0)
-    boolean hasStatusEffect_(LivingEntity ent, StatusEffect effect)
-    {
-        if (ent.equals(KorppuMod.mc.player) && ((Passives) Objects.requireNonNull(ModuleManager.getModule(Passives.class))).getNoLevitation().getValue() && effect == StatusEffects.LEVITATION)
-        {
+    boolean hasStatusEffect_(LivingEntity ent, StatusEffect effect) {
+        if (ent.equals(KorppuMod.mc.player) && ((Passives) Objects.requireNonNull(ModuleManager.getModule(Passives.class))).getNoLevitation()
+                                                                                                                           .getValue() && effect == StatusEffects.LEVITATION) {
             return false;
-        } else
-        {
+        } else {
             return ent.hasStatusEffect(effect);
         }
     }

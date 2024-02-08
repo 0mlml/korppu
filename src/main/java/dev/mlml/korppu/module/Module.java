@@ -9,15 +9,13 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class Module
-{
+public abstract class Module {
     @Getter
     private final String name;
     @Getter
@@ -28,19 +26,18 @@ public class Module
     private final KeyBinding keybind;
     @Getter
     private final Map<Integer, Boolean> modifierKeyStates;
-    @Getter protected Config config;
+    @Getter
+    protected Config config;
     @Getter
     private boolean enabled;
 
-    public Module(String name, String description, ModuleType type, int
-            key)
-    {
+    public Module(String name, String description, ModuleType type, int key) {
         this.name = name;
         this.description = description;
         this.type = type;
 
-        keybind = new KeyBinding("key.korppumod." + name.replaceAll(" ", "").toLowerCase() + "_toggle",
-                key, "category.korppumod");
+        keybind = new KeyBinding("key.korppumod." + name.replaceAll(" ", "")
+                                                        .toLowerCase() + "_toggle", key, "category.korppumod");
 
         config = new Config();
 
@@ -48,96 +45,80 @@ public class Module
         initializeStates();
     }
 
-    private void initializeStates()
-    {
+    private void initializeStates() {
         int[] keys = new int[]{GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT, GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL, GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT};
 
-        for (int key : keys)
-        {
+        for (int key : keys) {
             modifierKeyStates.put(key, false);
         }
     }
 
-    public void onEnable()
-    {
+    public void onEnable() {
     }
 
-    public void onDisable()
-    {
+    public void onDisable() {
     }
 
-    public void setEnabled(boolean enabled)
-    {
+    public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-        if (enabled)
-        {
+        if (enabled) {
             onEnable();
-        } else
-        {
+        } else {
             onDisable();
         }
     }
 
-    public void toggle()
-    {
+    public void toggle() {
         setEnabled(!isEnabled());
     }
 
-    public void update(MinecraftClient mc)
-    {
+    public void update(MinecraftClient mc) {
         initializeStates();
-        if (keybind.wasPressed())
-        {
-            modifierKeyStates.forEach((keyCode, value) ->
-            {
+        if (keybind.wasPressed()) {
+            modifierKeyStates.forEach((keyCode, value) -> {
                 boolean isPressed = InputUtil.isKeyPressed(mc.getWindow().getHandle(), keyCode);
                 modifierKeyStates.put(keyCode, isPressed);
             });
-            if (modifierKeyStates.get(GLFW.GLFW_KEY_RIGHT_SHIFT))
-            {
+            if (modifierKeyStates.get(GLFW.GLFW_KEY_RIGHT_SHIFT)) {
                 KorppuMod.mc.setScreen(new ConfigScreen(this));
-            } else
-            {
-                if (!modifierKeyStates.containsValue(true))
-                {
+            } else {
+                if (!modifierKeyStates.containsValue(true)) {
                     toggle();
                 }
             }
         }
 
 
-        if (!isEnabled())
-        {
+        if (!isEnabled()) {
             return;
         }
         onTick();
     }
 
-    public void onTick()
-    {
+    public void onTick() {
     }
 
-    public void onWorldTick(ClientWorld clientWorld)
-    {
+    public void onWorldTick(ClientWorld clientWorld) {
     }
 
-    public void onFastTick()
-    {
+    public void onFastTick() {
     }
 
-    public void onWorldRender(WorldRenderContext worldRenderContext)
-    {
+    public void onWorldRender(WorldRenderContext worldRenderContext) {
     }
 
-    public void onRender(DrawContext drawContext, float tickDelta)
-    {
+    public void onRender(DrawContext drawContext, float tickDelta) {
     }
 
-    public String getStatus()
-    {
+    public String getStatus() {
         return "";
     }
 
-    public enum ModuleType
-    {RENDER, PLAYER, WORLD, META, NONE}
+    public enum ModuleType {
+        RENDER,
+        PLAYER,
+        WORLD,
+        META,
+        NONE
+    }
 }

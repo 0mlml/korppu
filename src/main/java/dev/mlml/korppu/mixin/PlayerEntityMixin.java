@@ -9,8 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(PlayerEntity.class)
-public class PlayerEntityMixin
-{
+public class PlayerEntityMixin {
     @Redirect(method = "tick", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/player/PlayerEntity;noClip:Z", opcode = Opcodes.PUTFIELD))
     void noClip_(PlayerEntity playerEntity, boolean value) {
         ShouldNoClip snc = new ShouldNoClip(playerEntity, playerEntity.isSpectator());

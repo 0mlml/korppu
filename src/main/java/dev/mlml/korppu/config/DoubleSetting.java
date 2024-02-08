@@ -13,14 +13,12 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @Getter
-public class DoubleSetting extends GenericSetting<Double>
-{
+public class DoubleSetting extends GenericSetting<Double> {
     private final Double min;
     private final Double max;
     private final int precision;
 
-    public DoubleSetting(String name, String tooltip, Double defaultValue, Double min, Double max, int precision, List<Consumer<Double>> callbacks)
-    {
+    public DoubleSetting(String name, String tooltip, Double defaultValue, Double min, Double max, int precision, List<Consumer<Double>> callbacks) {
         super(name, tooltip, defaultValue, callbacks);
 
         this.min = min;
@@ -28,46 +26,57 @@ public class DoubleSetting extends GenericSetting<Double>
         this.precision = precision;
     }
 
-    public DoubleSetting(String name, String tooltip, Double defaultValue, Double min, Double max, int precision)
-    {
+    public DoubleSetting(String name, String tooltip, Double defaultValue, Double min, Double max, int precision) {
         this(name, tooltip, defaultValue, min, max, precision, Collections.emptyList());
     }
 
     @Override
-    public Text asText()
-    {
+    public String[] serialize() {
+        return new String[]{"d", getName(), getValue().toString()};
+    }
+
+    @Override
+    public void deserialize(String value) {
+        double val = Double.parseDouble(value);
+
+        if (val < min) {
+            val = min;
+        } else {
+            if (val > max) {
+                val = max;
+            }
+        }
+
+        setValue(val);
+    }
+
+    @Override
+    public Text asText() {
         return Text.literal(value.toString());
     }
 
     @Override
-    public ClickableWidget getAsWidget()
-    {
+    public ClickableWidget getAsWidget() {
         TextFieldWidget textFieldWidget = new TextFieldWidget(KorppuMod.mc.textRenderer, 0, 0, ConfigScreen.DEFAULT_WIDTH, ConfigScreen.DEFAULT_HEIGHT, asText());
         textFieldWidget.setTextPredicate(s -> s.matches("^[0-9]*.?[0-9]*$"));
         textFieldWidget.setText(value.toString());
         textFieldWidget.setTooltip(Tooltip.of(Text.literal(tooltip)));
-        textFieldWidget.setChangedListener(s ->
-        {
-            try
-            {
+        textFieldWidget.setChangedListener(s -> {
+            try {
                 double val = Double.parseDouble(s);
 
                 val = Math.round(val * Math.pow(10, precision)) / Math.pow(10, precision);
 
-                if (val < min)
-                {
+                if (val < min) {
                     val = min;
-                } else
-                {
-                    if (val > max)
-                    {
+                } else {
+                    if (val > max) {
                         val = max;
                     }
                 }
 
                 setValue(val);
-            } catch (Exception e)
-            {
+            } catch (Exception e) {
                 setValue(getDefaultValue());
             }
 

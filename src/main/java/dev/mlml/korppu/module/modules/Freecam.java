@@ -4,6 +4,7 @@ import dev.mlml.korppu.KorppuMod;
 import dev.mlml.korppu.config.BooleanSetting;
 import dev.mlml.korppu.config.DoubleSetting;
 import dev.mlml.korppu.config.ListSetting;
+import dev.mlml.korppu.event.Listener;
 import dev.mlml.korppu.event.events.PacketEvent;
 import dev.mlml.korppu.event.events.ShouldChunkRender;
 import dev.mlml.korppu.event.events.ShouldNoClip;
@@ -14,8 +15,7 @@ import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.util.math.Vec3d;
 import org.lwjgl.glfw.GLFW;
 
-public class Freecam extends Module
-{
+public class Freecam extends Module {
     private final DoubleSetting speed = config.add(new DoubleSetting("Fly Speed", "The speed at which you fly", 0.05d, 0.01d, 5d, 1));
     private final ListSetting<Mode> mode = config.add(new ListSetting<>("Mode", "The mode of freecam", Mode.Spectator));
     private final BooleanSetting restrictInteractions = config.add(new BooleanSetting("Restrict Interactions", "Restrict interactions with the world", true));
@@ -26,25 +26,22 @@ public class Freecam extends Module
 
     private FakePlayerEntity fakePlayer;
 
-    public Freecam()
-    {
+    public Freecam() {
         super("Freecam", "Allows you to move your camera freely", ModuleType.RENDER, GLFW.GLFW_KEY_G);
 
-        FreecamEventHandler eventHandler = new FreecamEventHandler();
-        KorppuMod.eventManager.register(eventHandler);
+        KorppuMod.eventManager.register(this);
     }
 
     @Override
-    public String getStatus()
-    {
-        return String.format("%s, %s", mode.getValue().name().charAt(0), restrictInteractions.getValue() ? "Restrict" : "Unbound");
+    public String getStatus() {
+        return String.format("%s, %s", mode.getValue()
+                                           .name()
+                                           .charAt(0), restrictInteractions.getValue() ? "Restrict" : "Unbound");
     }
 
     @Override
-    public void onEnable()
-    {
-        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null)
-        {
+    public void onEnable() {
+        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null) {
             return;
         }
 
@@ -58,13 +55,17 @@ public class Freecam extends Module
     }
 
     @Override
-    public void onDisable()
-    {
-        fakePlayer.resetPlayerPosition();
-        fakePlayer.despawn();
+    public void onDisable() {
+        if (fakePlayer != null) {
+            fakePlayer.resetPlayerPosition();
+            fakePlayer.despawn();
+        }
 
-        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null)
-        {
+        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null) {
+            return;
+        }
+
+        if (previous == null) {
             return;
         }
 
@@ -73,8 +74,7 @@ public class Freecam extends Module
         yaw = 0f;
         pitch = 0f;
 
-        if (mode.getValue() == Mode.Spectator)
-        {
+        if (mode.getValue() == Mode.Spectator) {
             KorppuMod.mc.player.getAbilities().flying = false;
             KorppuMod.mc.player.getAbilities().setFlySpeed(0.05f);
         }
@@ -83,64 +83,50 @@ public class Freecam extends Module
     }
 
     @Override
-    public void onTick()
-    {
-        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null || KorppuMod.mc.getNetworkHandler() == null)
-        {
+    public void onTick() {
+        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null || KorppuMod.mc.getNetworkHandler() == null) {
             return;
         }
 
-        if (mode.getValue() == Mode.Spectator)
-        {
+        if (mode.getValue() == Mode.Spectator) {
             KorppuMod.mc.player.getAbilities().flying = true;
             KorppuMod.mc.player.getAbilities().setFlySpeed((float) (speed.getValue() + 0f));
             KorppuMod.mc.player.setSwimming(false);
         }
     }
 
-    public enum Mode
-    {
-        Spectator,
-        Phantom
+    @Listener
+    public void onPacketSend(PacketEvent.Sent pe) {
+        if (!isEnabled()) {
+            return;
+        }
+
+        if (pe.getPacket() instanceof PlayerMoveC2SPacket) {
+            pe.setCancelled(true);
+        }
+        if (pe.getPacket() instanceof PlayerInputC2SPacket && restrictInteractions.getValue()) {
+            pe.setCancelled(true);
+        }
     }
 
-    public class FreecamEventHandler
-    {
-        public void onPacketSend(PacketEvent.Sent pe)
-        {
-            if (!isEnabled())
-            {
-                return;
-            }
-
-            if (pe.getPacket() instanceof PlayerMoveC2SPacket)
-            {
-                pe.setCancelled(true);
-            }
-            if (pe.getPacket() instanceof PlayerInputC2SPacket && restrictInteractions.getValue())
-            {
-                pe.setCancelled(true);
-            }
+    public void onShouldChunkRender(ShouldChunkRender scre) {
+        if (!isEnabled() || mode.getValue() != Mode.Spectator) {
+            return;
         }
 
-        public void onShouldChunkRender(ShouldChunkRender scre)
-        {
-            if (!isEnabled() || mode.getValue() != Mode.Spectator)
-            {
-                return;
-            }
+        scre.setShouldRender(true);
+    }
 
-            scre.setShouldRender(true);
+    public void onShouldNoclip(ShouldNoClip snce) {
+        if (!isEnabled() || mode.getValue() != Mode.Spectator || snce.getPlayer().isOnGround()) {
+            return;
         }
 
-        public void onShouldNoclip(ShouldNoClip snce)
-        {
-            if (!isEnabled() || mode.getValue() != Mode.Spectator || snce.getPlayer().isOnGround())
-            {
-                return;
-            }
+        snce.setShouldNoclip(true);
+    }
 
-            snce.setShouldNoclip(true);
-        }
+    public enum Mode {
+        Spectator,
+        Phantom
     }
 }

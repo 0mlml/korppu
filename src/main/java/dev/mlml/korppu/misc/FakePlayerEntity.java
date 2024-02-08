@@ -8,11 +8,9 @@ import net.minecraft.entity.player.PlayerEntity;
 
 import java.util.Objects;
 
-public class FakePlayerEntity extends OtherClientPlayerEntity
-{
+public class FakePlayerEntity extends OtherClientPlayerEntity {
 
-    public FakePlayerEntity()
-    {
+    public FakePlayerEntity() {
         super(Objects.requireNonNull(KorppuMod.mc.world), Objects.requireNonNull(KorppuMod.mc.player).getGameProfile());
         copyPositionAndRotation(KorppuMod.mc.player);
 
@@ -24,28 +22,23 @@ public class FakePlayerEntity extends OtherClientPlayerEntity
         spawn();
     }
 
-    private void copyInventory()
-    {
-        if (KorppuMod.mc.player == null)
-        {
+    private void copyInventory() {
+        if (KorppuMod.mc.player == null) {
             return;
         }
 
         getInventory().clone(KorppuMod.mc.player.getInventory());
     }
 
-    private void copyPlayerModel(Entity from, Entity to)
-    {
+    private void copyPlayerModel(Entity from, Entity to) {
         DataTracker fromTracker = from.getDataTracker();
         DataTracker toTracker = to.getDataTracker();
         Byte playerModel = fromTracker.get(PlayerEntity.PLAYER_MODEL_PARTS);
         toTracker.set(PlayerEntity.PLAYER_MODEL_PARTS, playerModel);
     }
 
-    private void copyRotation()
-    {
-        if (KorppuMod.mc.player == null)
-        {
+    private void copyRotation() {
+        if (KorppuMod.mc.player == null) {
             return;
         }
 
@@ -53,35 +46,28 @@ public class FakePlayerEntity extends OtherClientPlayerEntity
         bodyYaw = KorppuMod.mc.player.bodyYaw;
     }
 
-    private void resetCapeMovement()
-    {
+    private void resetCapeMovement() {
         capeX = getX();
         capeY = getY();
         capeZ = getZ();
     }
 
-    private void spawn()
-    {
-        if (KorppuMod.mc.world == null)
-        {
+    private void spawn() {
+        if (KorppuMod.mc.world == null) {
             return;
         }
 
         KorppuMod.mc.world.addEntity(this);
     }
 
-    public void despawn()
-    {
+    public void despawn() {
         discard();
     }
 
-    public void resetPlayerPosition()
-    {
-        if (KorppuMod.mc.player == null)
-        {
+    public void resetPlayerPosition() {
+        if (KorppuMod.mc.player == null) {
             return;
         }
-        KorppuMod.mc.player.refreshPositionAndAngles(getX(), getY(), getZ(), getYaw(),
-                getPitch());
+        KorppuMod.mc.player.refreshPositionAndAngles(getX(), getY(), getZ(), getYaw(), getPitch());
     }
 }
