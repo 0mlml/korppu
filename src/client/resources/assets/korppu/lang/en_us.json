@@ -1,0 +1,17 @@
+{
+  "category.korppumod": "KorppuMod",
+  "key.korppumod.antiaim_toggle": "Toggle anti-aim",
+  "key.korppumod.backtrack_toggle": "Toggle backtrack",
+  "key.korppumod.edgejump_toggle": "Toggle edge jump",
+  "key.korppumod.fastmine_toggle": "Toggle fast mine",
+  "key.korppumod.fastplace_toggle": "Toggle fast place",
+  "key.korppumod.flight_toggle": "Toggle flight",
+  "key.korppumod.freecam_toggle": "Toggle freecam",
+  "key.korppumod.headsupdisplay_toggle": "Toggle HUD",
+  "key.korppumod.instabow_toggle": "Toggle instabow",
+  "key.korppumod.longjump_toggle": "Toggle long jump",
+  "key.korppumod.nofall_toggle": "Toggle no fall",
+  "key.korppumod.onlineprotections_toggle": "Toggle online protections",
+  "key.korppumod.passives_toggle": "Toggle passives",
+  "key.korppumod.pingspoof_toggle": "Toggle ping spoof"
+}
