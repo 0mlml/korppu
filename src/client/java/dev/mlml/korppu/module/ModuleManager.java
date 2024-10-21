@@ -18,20 +18,25 @@ public class ModuleManager {
     public static void init() {
         modules.add(new HeadsUpDisplay());
         modules.add(new Flight());
-        modules.add(new AntiAim());
+        modules.add(new Speed());
+//        modules.add(new AntiAim());
         modules.add(new OnlineProtections());
         modules.add(new NoFall());
         modules.add(new EdgeJump());
         modules.add(new Backtrack());
         modules.add(new Freecam());
         modules.add(new FastMine());
-        modules.add(new InstaBow());
         modules.add(new PingSpoof());
         modules.add(new LongJump());
         modules.add(new Passives());
         modules.add(new Meta());
-//        modules.add(new WallHack());
+        modules.add(new WallHack());
         modules.add(new KillAura());
+        modules.add(new AttackManip());
+        modules.add(new TPRange());
+//        modules.add(new Replanter());
+        modules.add(new Logger());
+        modules.add(new AtoB());
 
         for (Module m : modules) {
             KeyBindingHelper.registerKeyBinding(m.getKeybind());
@@ -53,10 +58,11 @@ public class ModuleManager {
         return meta != null ? meta.getPrefix().getValue() : ";";
     }
 
-    public static Module getModule(Class<? extends Module> moduleClass) {
+    @SuppressWarnings("unchecked")
+    public static <T extends Module> T getModule(Class<T> moduleClass) {
         for (Module module : modules) {
             if (module.getClass().equals(moduleClass)) {
-                return module;
+                return (T) module;
             }
         }
         return null;

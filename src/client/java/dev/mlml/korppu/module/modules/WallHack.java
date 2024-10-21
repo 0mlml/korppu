@@ -7,6 +7,7 @@ import dev.mlml.korppu.config.BooleanSetting;
 import dev.mlml.korppu.config.DoubleSetting;
 import dev.mlml.korppu.config.ListSetting;
 import dev.mlml.korppu.module.Module;
+import lombok.Getter;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.gl.VertexBuffer;
@@ -22,20 +23,25 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
 public class WallHack extends Module {
-    final DoubleSetting range = config.add(new DoubleSetting("Range", "How far to see", 64d, 1d, 128d, 1));
-    final BooleanSetting players = config.add(new BooleanSetting("Players", "See players", true));
-    final BooleanSetting mobs = config.add(new BooleanSetting("Mobs", "See mobs", true));
-    final BooleanSetting animals = config.add(new BooleanSetting("Animals", "See animals", true));
-    final BooleanSetting items = config.add(new BooleanSetting("Items", "See items", true));
-    final BooleanSetting others = config.add(new BooleanSetting("Others", "See others", true));
-    final ListSetting<Mode> mode = config.add(new ListSetting<>("Mode", "How to render entities", Mode.BB));
+    private final DoubleSetting range = config.add(new DoubleSetting("Range", "How far to see", 64d, 1d, 128d, 1));
+    private final BooleanSetting players = config.add(new BooleanSetting("Players", "See players", true));
+    private final BooleanSetting mobs = config.add(new BooleanSetting("Mobs", "See mobs", true));
+    private final BooleanSetting animals = config.add(new BooleanSetting("Animals", "See animals", true));
+    private final BooleanSetting items = config.add(new BooleanSetting("Items", "See items", true));
+    private final BooleanSetting others = config.add(new BooleanSetting("Others", "See others", true));
+    @Getter
+    private final ListSetting<Mode> mode = config.add(new ListSetting<>("Mode", "How to render entities", Mode.Glowing));
 
     public WallHack() {
         super("WallHack", "See through walls", GLFW.GLFW_KEY_U);
     }
 
-    private boolean checkShouldRender(Entity ent) {
-        if (ent.getUuid().equals(KorppuMod.mc.player.getUuid())) {
+    public boolean checkShouldRender(Entity ent) {
+        if (KorppuMod.mc.player == null) {
+            return false;
+        }
+
+        if (KorppuMod.mc.player.getPos().distanceTo(ent.getPos()) > range.getValue()) {
             return false;
         }
 
@@ -55,48 +61,15 @@ public class WallHack extends Module {
             return true;
         }
 
-        return others.getValue();
+        return others.getValue() && !(ent instanceof PlayerEntity) && !(ent instanceof Monster) && !(ent instanceof PassiveEntity) && !(ent instanceof ItemEntity);
     }
 
     @Override
     public void onWorldRender(WorldRenderContext wrc) {
-        if (KorppuMod.mc.world == null || KorppuMod.mc.player == null) {
-            return;
-        }
 
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
-
-        wrc.matrixStack().push();
-
-        for (Entity ent : KorppuMod.mc.world.getEntities()) {
-            if (ent.squaredDistanceTo(KorppuMod.mc.player) > range.getValue() * range.getValue()) {
-                continue;
-            }
-
-            if (!checkShouldRender(ent)) {
-                continue;
-            }
-
-            switch (mode.getValue()) {
-                case BB:
-
-                    break;
-                case Rect:
-
-                    break;
-            }
-        }
-
-        wrc.matrixStack().pop();
-
-        RenderSystem.setShaderColor(1, 1, 1, 1);
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL11.glDisable(GL11.GL_BLEND);
     }
 
     public enum Mode {
-        BB, Rect
+        Glowing
     }
 }

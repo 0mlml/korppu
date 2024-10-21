@@ -24,7 +24,7 @@ public class PingSpoof extends Module {
     private final ListSetting<Mode> mode = config.add(new ListSetting<>("Mode", "Delay all or delay only pong", Mode.Fake));
 
     public PingSpoof() {
-        super("PingSpoof", "Spoofs your ping", GLFW.GLFW_KEY_KP_1);
+        super("PingSpoof", "Spoofs your ping", -1);
 
         KorppuMod.eventManager.register(this);
     }

@@ -28,7 +28,7 @@ public class FastMine extends Module {
     private final List<Vec3d> posList = new ArrayList<>();
 
     public FastMine() {
-        super("FastMine", "Instantly mine blocks", GLFW.GLFW_KEY_LEFT_BRACKET);
+        super("FastMine", "Instantly mine blocks", -1);
 
         KorppuMod.eventManager.register(this);
     }

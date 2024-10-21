@@ -1,5 +1,7 @@
 package dev.mlml.korppu.gui;
 
+import dev.mlml.korppu.KorppuMod;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,13 +49,13 @@ public class TextFormatter {
      */
     public static String format(String text, Object... args) {
         List<Code> fmtCodes = new ArrayList<>();
-        List<String> fmtArgs = new ArrayList<>();
+        List<Object> fmtArgs = new ArrayList<>();
 
         for (Object arg : args) {
             if (arg instanceof Code) {
                 fmtCodes.add((Code) arg);
             } else {
-                fmtArgs.add(arg.toString());
+                fmtArgs.add(arg);
             }
         }
 

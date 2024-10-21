@@ -34,8 +34,7 @@ public abstract class Module {
         this.name = name;
         this.description = description;
 
-        keybind = new KeyBinding("key.korppumod." + name.replaceAll(" ", "")
-                                                        .toLowerCase() + "_toggle", key, "category.korppumod");
+        keybind = new KeyBinding("key.korppumod." + name.replaceAll(" ", "").toLowerCase() + "_toggle", key, "category.korppumod");
 
         config = new Config();
 

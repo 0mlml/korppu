@@ -7,6 +7,7 @@
     "ClientConnectionMixin",
     "ILivingEntityMixin",
     "IPlayerMoveC2SPacketMixin",
+    "IPlayerInteractEntityC2SPacketMixin",
     "LivingEntityMixin",
     "PlayerEntityMixin"
   ],
@@ -15,7 +16,10 @@
   },
   "client": [
     "ChatScreenMixin",
+    "ClientPlayerEntityMixin",
+    "ClientPlayerInteractionManagerMixin",
     "IClientPlayerInteractionManagerMixin",
-    "WorldRendererMixin"
+    "WorldRendererMixin",
+    "EntityMixin"
   ]
 }
