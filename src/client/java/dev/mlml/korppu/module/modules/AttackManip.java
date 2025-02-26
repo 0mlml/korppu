@@ -49,39 +49,39 @@ public class AttackManip extends Module {
     }
 
     private void handleDoubleHopCriticals(Vec3d playerPos) {
-        PlayerMoveC2SPacket.PositionAndOnGround jump = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y + 0.2, playerPos.z, true);
-        PlayerMoveC2SPacket.PositionAndOnGround fall = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, false);
-        PlayerMoveC2SPacket.PositionAndOnGround lift = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y + 0.000011, playerPos.z, false);
-        PlayerMoveC2SPacket.PositionAndOnGround stab = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, false);
+        PlayerMoveC2SPacket.PositionAndOnGround jump = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y + 0.2, playerPos.z, true, KorppuMod.mc.player.horizontalCollision);
+        PlayerMoveC2SPacket.PositionAndOnGround fall = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, false, KorppuMod.mc.player.horizontalCollision);
+        PlayerMoveC2SPacket.PositionAndOnGround lift = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y + 0.000011, playerPos.z, false, KorppuMod.mc.player.horizontalCollision);
+        PlayerMoveC2SPacket.PositionAndOnGround stab = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, false, KorppuMod.mc.player.horizontalCollision);
 
         sendCriticalPackets(jump, fall, lift, stab);
     }
 
     private void handleJumpResetCriticals(Vec3d playerPos) {
-        PlayerMoveC2SPacket.PositionAndOnGround reset = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, true);
-        PlayerMoveC2SPacket.PositionAndOnGround jump = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y + 0.4, playerPos.z, false);
-        PlayerMoveC2SPacket.PositionAndOnGround land = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, false);
+        PlayerMoveC2SPacket.PositionAndOnGround reset = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, true, KorppuMod.mc.player.horizontalCollision);
+        PlayerMoveC2SPacket.PositionAndOnGround jump = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y + 0.4, playerPos.z, false, KorppuMod.mc.player.horizontalCollision);
+        PlayerMoveC2SPacket.PositionAndOnGround land = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, false, KorppuMod.mc.player.horizontalCollision);
 
         sendCriticalPackets(reset, jump, land);
     }
 
     private void handleMinimalLiftCriticals(Vec3d playerPos) {
-        PlayerMoveC2SPacket.PositionAndOnGround subtleLift = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y + 0.005, playerPos.z, false);
-        PlayerMoveC2SPacket.PositionAndOnGround resetPosition = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, false);
+        PlayerMoveC2SPacket.PositionAndOnGround subtleLift = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y + 0.005, playerPos.z, false, KorppuMod.mc.player.horizontalCollision);
+        PlayerMoveC2SPacket.PositionAndOnGround resetPosition = new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, false, KorppuMod.mc.player.horizontalCollision);
 
         sendCriticalPackets(subtleLift, resetPosition);
     }
 
     private void handleYawKnockback(Vec3d playerPos) {
         KorppuMod.mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(KorppuMod.mc.player, ClientCommandC2SPacket.Mode.START_SPRINTING));
-        KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x + 0.1 * KorppuMod.mc.player.getRotationVec(1f).x, playerPos.y + 0.05, playerPos.z + 0.1 * KorppuMod.mc.player.getRotationVec(1f).z, false));
-        KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, true));
+        KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x + 0.1 * KorppuMod.mc.player.getRotationVec(1f).x, playerPos.y + 0.05, playerPos.z + 0.1 * KorppuMod.mc.player.getRotationVec(1f).z, false, KorppuMod.mc.player.horizontalCollision));
+        KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, true, KorppuMod.mc.player.horizontalCollision));
     }
 
     private void handleSprintKnockback(Vec3d playerPos) {
         KorppuMod.mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(KorppuMod.mc.player, ClientCommandC2SPacket.Mode.START_SPRINTING));
-        KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y + 0.1, playerPos.z, false));
-        KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, true));
+        KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y + 0.1, playerPos.z, false, KorppuMod.mc.player.horizontalCollision));
+        KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(playerPos.x, playerPos.y, playerPos.z, true, KorppuMod.mc.player.horizontalCollision));
     }
 
     private void sendCriticalPackets(PlayerMoveC2SPacket.PositionAndOnGround... packets) {

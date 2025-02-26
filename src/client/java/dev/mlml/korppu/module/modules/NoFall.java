@@ -15,11 +15,12 @@ import org.lwjgl.glfw.GLFW;
 import javax.swing.text.Utilities;
 
 public class NoFall extends Module {
-    private final ListSetting<Mode> mode = config.add(new ListSetting<>("Mode", "Method", Mode.Packet));
-    private final DoubleSetting fallDistance = config.add(new DoubleSetting("Fall Distance", "The distance you can fall before triggering", 2.0, 1.0, 10.0, 1));
-    private final BooleanSetting fastFall = config.add(new BooleanSetting("Fast Fall", "Intentionally take fall damage at 3 blocks (Packet only)", false));
-    private boolean hasSentOnGround = false;
-    private int ticksSinceSentOnGround = 0;
+    // It appears that as of 1.20.4, the client is now longer aware of fallDistance.
+    private final ListSetting<Mode> mode = config.add(new ListSetting<>("Mode", "Method", Mode.OnGround));
+//    private final DoubleSetting fallDistance = config.add(new DoubleSetting("Fall Distance", "The distance you can fall before triggering", 2.0, 1.0, 10.0, 1));
+//    private final BooleanSetting fastFall = config.add(new BooleanSetting("Fast Fall", "Intentionally take fall damage at 3 blocks (Packet only)", false));
+//    private boolean hasSentOnGround = false;
+//    private int ticksSinceSentOnGround = 0;
 
     public NoFall() {
         super("NoFall", "Prevents fall damage", GLFW.GLFW_KEY_N);
@@ -29,18 +30,18 @@ public class NoFall extends Module {
 
     @Override
     public String getStatus() {
-        if (KorppuMod.mc.player == null || KorppuMod.mc.getNetworkHandler() == null || KorppuMod.mc.player.fallDistance <= 0.1f) {
-            hasSentOnGround = false;
+//        if (KorppuMod.mc.player == null || KorppuMod.mc.getNetworkHandler() == null || KorppuMod.mc.player.fallDistance <= 0.1f) {
+//            hasSentOnGround = false;
             return mode.getValue().name();
-        }
+//        }
 
-        String distanceString = String.format("%.2f", KorppuMod.mc.player.fallDistance);
-        TextFormatter.Code color = KorppuMod.mc.player.fallDistance - fallDistance.getValue() < 0 ? TextFormatter.Code.GREEN : TextFormatter.Code.RED;
-        if (hasSentOnGround && color == TextFormatter.Code.RED) {
-            color = TextFormatter.Code.YELLOW;
-        }
-
-        return mode.getValue().name() + " " + TextFormatter.format("%1%s", color, distanceString);
+//        String distanceString = String.format("%.2f", KorppuMod.mc.player.fallDistance);
+//        TextFormatter.Code color = KorppuMod.mc.player.fallDistance - fallDistance.getValue() < 0 ? TextFormatter.Code.GREEN : TextFormatter.Code.RED;
+//        if (hasSentOnGround && color == TextFormatter.Code.RED) {
+//            color = TextFormatter.Code.YELLOW;
+//        }
+//
+//        return mode.getValue().name() + " " + TextFormatter.format("%1%s", color, distanceString);
     }
 
     @Override
@@ -49,31 +50,31 @@ public class NoFall extends Module {
             return;
         }
 
-        if (hasSentOnGround) {
-            ticksSinceSentOnGround++;
-        } else {
-            ticksSinceSentOnGround = 0;
-        }
+//        if (hasSentOnGround) {
+//            ticksSinceSentOnGround++;
+//        } else {
+//            ticksSinceSentOnGround = 0;
+//        }
 
-        if (fastFall.getValue() && mode.getValue() == Mode.Packet) {
-            if (KorppuMod.mc.player.fallDistance > 3.0f) {
-                KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.OnGroundOnly(true));
-                hasSentOnGround = true;
-            }
-        } else {
-            if (KorppuMod.mc.player.fallDistance > fallDistance.getValue()) {
-                switch (mode.getValue()) {
-                    case Packet -> {
-                        KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.OnGroundOnly(true));
-                        hasSentOnGround = true;
-                    }
-                    case Velocity -> {
-                        KorppuMod.mc.player.setVelocity(0, 0.1, 0);
-                        KorppuMod.mc.player.fallDistance = 0;
-                    }
-                }
-            }
-        }
+//        if (fastFall.getValue() && mode.getValue() == Mode.Packet) {
+//            if (KorppuMod.mc.player.fallDistance > 3.0f) {
+//                KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.OnGroundOnly(true, KorppuMod.mc.player.horizontalCollision));
+//                hasSentOnGround = true;
+//            }
+//        } else {
+//            if (KorppuMod.mc.player.fallDistance > fallDistance.getValue()) {
+//                switch (mode.getValue()) {
+//                    case Packet -> {
+//                        KorppuMod.mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.OnGroundOnly(true, KorppuMod.mc.player.horizontalCollision));
+//                        hasSentOnGround = true;
+//                    }
+//                    case Velocity -> {
+//                        KorppuMod.mc.player.setVelocity(0, 0.1, 0);
+//                        KorppuMod.mc.player.fallDistance = 0;
+//                    }
+//                }
+//            }
+//        }
     }
 
     @Listener
@@ -84,14 +85,14 @@ public class NoFall extends Module {
 
         if (packetEvent.getPacket() instanceof PlayerMoveC2SPacket && mode.getValue() == Mode.OnGround) {
             ((IPlayerMoveC2SPacketMixin) packetEvent.getPacket()).setOnGround(true);
-            hasSentOnGround = true;
+//            hasSentOnGround = true;
         }
     }
 
     public enum Mode {
-        Packet,
+//        Packet,
         OnGround,
-        Velocity
+//        Velocity
     }
 }
 

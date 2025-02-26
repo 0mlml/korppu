@@ -15,7 +15,8 @@ import net.minecraft.network.packet.s2c.play.EntityDamageS2CPacket;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.Vec3d;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Logger extends Module {
     private final BooleanSetting logTaken = config.add(new BooleanSetting("Log Taken", "Logs damage taken", true));
@@ -24,6 +25,7 @@ public class Logger extends Module {
     private final BooleanSetting logPlayerEnterRender = config.add(new BooleanSetting("Log Player Enter Render", "Logs when a player enters render distance", true));
     private final BooleanSetting logPlayerLeaveRender = config.add(new BooleanSetting("Log Player Leave Render", "Logs when a player leaves render distance", true));
     private final BooleanSetting logGameModeChange = config.add(new BooleanSetting("Log Game Mode Change", "Logs when a player changes game mode", true));
+    private final BooleanSetting debug = config.add(new BooleanSetting("Debug", "Logs debug information", false));
 
     private final BooleanSetting toChat = config.add(new BooleanSetting("To Chat", "Logs to chat (as opposed to just status)", true));
 
@@ -33,32 +35,11 @@ public class Logger extends Module {
         KorppuMod.eventManager.register(this);
     }
 
-    private record EntityHealth(LivingEntity entity, float health) {
-        public float getDelta(float newHealth) {
-            return health - newHealth;
-        }
+    private record QueuedEntity(LivingEntity entity, String damageSource, float health) {
     }
 
-    private HashMap<Integer, EntityHealth> entityHealthMap = new HashMap<>();
-
-    private void putEntityHealth(LivingEntity entity) {
-        EntityHealth entityHealth = new EntityHealth(entity, entity.getHealth());
-        entityHealthMap.put(entity.getId(), entityHealth);
-    }
-
-    private void pruneEntityHealth() {
-        entityHealthMap.entrySet().removeIf(entry -> KorppuMod.mc.world.getEntityById(entry.getValue().entity.getId()) == null || KorppuMod.mc.world.getEntityById(entry.getValue().entity.getId()).isRemoved());
-    }
-
-    private void storeEntities() {
-        for (Entity entity : KorppuMod.mc.world.getEntities()) {
-            if (entity instanceof LivingEntity le) {
-                if (!entityHealthMap.containsKey(entity.getId())) {
-                    putEntityHealth(le);
-                }
-            }
-        }
-    }
+    private List<QueuedEntity> queuedEntitiesToProcess = new ArrayList<>();
+    private List<QueuedEntity> queuedEntitiesThisTick = new ArrayList<>();
 
     @Override
     public void onTick() {
@@ -66,17 +47,69 @@ public class Logger extends Module {
             return;
         }
 
-        pruneEntityHealth();
-        storeEntities();
+        int count = 0;
+        for (QueuedEntity entity : queuedEntitiesToProcess) {
+            String message = processEntity(entity);
+            if (message != null) {
+                logMessage(message);
+                count++;
+            }
+        }
+        if (debug.getValue() && count > 0) {
+            logMessage("Processed " + count + " entities.");
+        }
+        queuedEntitiesToProcess.clear();
+        queuedEntitiesToProcess.addAll(queuedEntitiesThisTick);
+        queuedEntitiesThisTick.clear();
+    }
+
+    private String processEntity(QueuedEntity qe) {
+        StringBuilder message = new StringBuilder();
+        if (qe.entity == KorppuMod.mc.player) {
+            if (!logTaken.getValue()) {
+                return null;
+            }
+            message.append(TextFormatter.format("%1You were %2", TextFormatter.Code.RESET, TextFormatter.Code.RED));
+        } else {
+            if (!logOtherTaken.getValue()) {
+                return null;
+            }
+            message.append(qe.entity.getName().getString());
+            message.append(TextFormatter.format(" was %1", TextFormatter.Code.RED));
+        }
+        message.append(qe.damageSource);
+        Entity entity = KorppuMod.mc.world.getEntityById(qe.entity.getId());
+        if (entity == null || !(entity instanceof LivingEntity)) {
+            message.append(" for an unknown amount of damage. Was ");
+            message.append(TextFormatter.format("%2%.1f%1/%2%.1f%1 hp.", TextFormatter.Code.RESET, TextFormatter.Code.GREEN, qe.entity.getHealth(), qe.entity.getMaxHealth()));
+            return message.toString();
+        }
+        LivingEntity le = (LivingEntity) entity;
+        double delta = qe.health - le.getHealth();
+        message.append(" for ");
+        message.append(TextFormatter.format("%2%.1f%1 hp. Now ", TextFormatter.Code.RESET, TextFormatter.Code.RED, delta));
+        message.append(TextFormatter.format("%2%.1f%1/%2%.1f%1 hp.", TextFormatter.Code.RESET, TextFormatter.Code.GREEN, le.getHealth(), le.getMaxHealth()));
+        return message.toString();
     }
 
     private String status = "";
 
     private void logMessage(String message) {
+        logMessage(message, false);
+    }
+
+    private void logMessage(String message, boolean canBeStatus) {
         if (toChat.getValue()) {
             ChatHelper.message(message);
         }
-        status = message;
+        if (canBeStatus) {
+            status = message;
+        }
+    }
+
+    @Override
+    public String getStatus() {
+        return status;
     }
 
     @Listener
@@ -88,8 +121,6 @@ public class Logger extends Module {
         if (logDealt.getValue() && event.getPacket() instanceof PlayerInteractEntityC2SPacket epacket) {
             handleLogDealt(epacket);
         }
-
-
     }
 
     private void handleLogDealt(PlayerInteractEntityC2SPacket epacket) {
@@ -124,10 +155,13 @@ public class Logger extends Module {
             return;
         }
 
+        double hitDistance = Math.sqrt(KorppuMod.mc.player.squaredDistanceTo(le));
+
         StringBuilder message = new StringBuilder();
         message.append(TextFormatter.format("%1Hit %2", TextFormatter.Code.RESET, TextFormatter.Code.YELLOW));
         message.append(le.getName().getString());
-        message.append(TextFormatter.format(". Was %2%.1f%1/%2%.1f%1 hp", TextFormatter.Code.RESET, TextFormatter.Code.GREEN, le.getHealth(), le.getMaxHealth()));
+        message.append(TextFormatter.format(" at %2%.1f%1 blocks.", TextFormatter.Code.RESET, TextFormatter.Code.YELLOW, hitDistance));
+        message.append(TextFormatter.format(" Was %2%.1f%1/%2%.1f%1 hp", TextFormatter.Code.RESET, TextFormatter.Code.GREEN, le.getHealth(), le.getMaxHealth()));
         logMessage(message.toString());
     }
 
@@ -136,7 +170,6 @@ public class Logger extends Module {
         if (!isEnabled() || KorppuMod.mc.world == null || KorppuMod.mc.player == null) {
             return;
         }
-
 
         if ((logTaken.getValue() || logOtherTaken.getValue()) && event.getPacket() instanceof EntityDamageS2CPacket packet) {
             handleLogTaken(packet);
@@ -149,7 +182,6 @@ public class Logger extends Module {
             return;
         }
 
-        String delta = entityHealthMap.containsKey(entity.getId()) ? String.format("%.1f", entityHealthMap.get(entity.getId()).getDelta(le.getHealth())) : "?";
         String type = packet.sourceType().value().msgId();
         int attackerId = packet.sourceDirectId();
         if (attackerId > 0) {
@@ -159,29 +191,8 @@ public class Logger extends Module {
             }
         }
 
-        if (entity.getId() == KorppuMod.mc.player.getId() && logTaken.getValue()) {
-            logForSelf(type, delta);
-        } else if (logOtherTaken.getValue()) {
-            logForOther(le, type, delta);
-        }
+        QueuedEntity qe = new QueuedEntity(le, type, le.getHealth());
 
-        putEntityHealth(le);
-    }
-
-    private void logForOther(LivingEntity le, String type, String delta) {
-        StringBuilder message = new StringBuilder();
-        message.append(le.getName().getString());
-        message.append(TextFormatter.format(" was %2%1%s", TextFormatter.Code.RESET, TextFormatter.Code.RED, type));
-        message.append(TextFormatter.format(" for %2%s%1 hp.", TextFormatter.Code.RESET, TextFormatter.Code.RED, delta));
-        message.append(TextFormatter.format(" Was %2%.1f%1/%2%.1f%1 hp.", TextFormatter.Code.RESET, TextFormatter.Code.GREEN, le.getHealth(), le.getMaxHealth()));
-        logMessage(message.toString());
-    }
-
-    private void logForSelf(String type, String delta) {
-        StringBuilder message = new StringBuilder();
-        message.append(TextFormatter.format("%1You were %2", TextFormatter.Code.RESET, TextFormatter.Code.RED));
-        message.append(type);
-        message.append(TextFormatter.format(" for %2%s%1 hp. ", TextFormatter.Code.RESET, TextFormatter.Code.RED, delta));
-        logMessage(message.toString());
+        queuedEntitiesThisTick.add(qe);
     }
 }

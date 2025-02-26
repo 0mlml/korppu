@@ -87,7 +87,7 @@ public class AntiAim extends Module {
             return;
         }
 
-        Objects.requireNonNull(KorppuMod.mc.getNetworkHandler()).sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(desiredYaw, desiredPitch, Objects.requireNonNull(KorppuMod.mc.player).isOnGround()));
+        Objects.requireNonNull(KorppuMod.mc.getNetworkHandler()).sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(desiredYaw, desiredPitch, Objects.requireNonNull(KorppuMod.mc.player).isOnGround(), KorppuMod.mc.player.horizontalCollision));
     }
 
     @Override

@@ -104,12 +104,6 @@ public class FastMine extends Module {
         if (!isEnabled() || posList.isEmpty()) {
             return;
         }
-
-        VertexConsumer vc = Objects.requireNonNull(worldRenderContext.consumers()).getBuffer(RenderLayer.getLines());
-
-        for (Vec3d p : posList) {
-            WorldRenderer.drawBox(vc, (float) p.x, (float) p.y, (float) p.z, (float) p.x + 1, (float) p.y + 1, (float) p.z + 1, 1, 1, 1, 1);
-        }
     }
 
     @Override

@@ -26,12 +26,12 @@ import java.util.stream.StreamSupport;
 public class KillAura extends Module {
     final DoubleSetting range = config.add(new DoubleSetting("Range", "How far to attack", 5d, 1d, 7d, 1));
     final BooleanSetting multiMode = config.add(new BooleanSetting("Multi Mode", "Attack multiple entities", false));
-    final DoubleSetting multiAmount = config.add(new DoubleSetting("Multi Amount", "How many entities to attack", 3d, 1d, 10d, 1));
+    final DoubleSetting multiAmount = config.add(new DoubleSetting("Multi Amount", "How many entities to attack", 3d, 1d, 100d, 1));
     final BooleanSetting players = config.add(new BooleanSetting("Players", "Attack players", true));
     final BooleanSetting mobs = config.add(new BooleanSetting("Mobs", "Attack mobs", true));
     final BooleanSetting animals = config.add(new BooleanSetting("Animals", "Attack animals", true));
     final BooleanSetting others = config.add(new BooleanSetting("Others", "Attack others", true));
-    final ListSetting<AttackPriority> attackPrio = config.add(new ListSetting<>("Mode", "How to render entities", AttackPriority.Near));
+    final ListSetting<AttackPriority> attackPrio = config.add(new ListSetting<>("Mode", "How to order entities", AttackPriority.Near));
     final DoubleSetting additionalDelay = config.add(new DoubleSetting("Additional Delay", "Additional delay between hits", 0d, 0d, 1000d, 1));
     final BooleanSetting lookingCheck = config.add(new BooleanSetting("\"Looking at\" check", "Check if entity is looked at", false));
 
