@@ -220,8 +220,8 @@ public class Rotations {
     @Listener
     public static void onPacketReceive(PacketEvent.Received pe) {
          if (pe.getPacket() instanceof PlayerPositionLookS2CPacket p) {
-            clientYaw = p.getYaw();
-            clientPitch = p.getPitch();
+            clientYaw = p.change().yaw();
+            clientPitch = p.change().pitch();
         }
     }
 }

@@ -36,7 +36,7 @@ public class Flight extends Module {
     private static PlayerMoveC2SPacket.Full upgrade(PlayerMoveC2SPacket packet) {
         assert KorppuMod.mc.player != null;
         Vec3d pos = KorppuMod.mc.player.getPos();
-        return new PlayerMoveC2SPacket.Full(packet.getX(pos.x), packet.getY(pos.y), packet.getZ(pos.z), KorppuMod.mc.player.getYaw(), KorppuMod.mc.player.getPitch(), packet.isOnGround());
+        return new PlayerMoveC2SPacket.Full(packet.getX(pos.x), packet.getY(pos.y), packet.getZ(pos.z), KorppuMod.mc.player.getYaw(), KorppuMod.mc.player.getPitch(), packet.isOnGround(), KorppuMod.mc.player.horizontalCollision);
     }
 
     @Override
