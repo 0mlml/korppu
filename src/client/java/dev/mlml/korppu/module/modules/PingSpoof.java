@@ -6,11 +6,12 @@ import dev.mlml.korppu.config.ListSetting;
 import dev.mlml.korppu.event.Listener;
 import dev.mlml.korppu.event.events.PacketEvent;
 import dev.mlml.korppu.module.Module;
+import dev.mlml.korppu.module.StatusEntry;
 import dev.mlml.korppu.module.ModuleManager;
-import net.minecraft.network.ClientConnection;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.c2s.common.CommonPongC2SPacket;
-import net.minecraft.network.packet.c2s.common.KeepAliveC2SPacket;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.common.ServerboundKeepAlivePacket;
+import net.minecraft.network.protocol.common.ServerboundPongPacket;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
@@ -24,7 +25,7 @@ public class PingSpoof extends Module {
     private final ListSetting<Mode> mode = config.add(new ListSetting<>("Mode", "Delay all or delay only pong", Mode.Fake));
 
     public PingSpoof() {
-        super("PingSpoof", "Spoofs your ping", -1);
+        super("PingSpoof", "Spoofs your ping", GLFW.GLFW_KEY_KP_1);
 
         KorppuMod.eventManager.register(this);
     }
@@ -34,11 +35,11 @@ public class PingSpoof extends Module {
     }
 
     private void sendPacket(Packet<?> packet) {
-        if (ModuleManager.doNotSendPackets()) {
+        if (!ModuleManager.isSendPackets()) {
             return;
         }
 
-        ClientConnection connection = Objects.requireNonNull(KorppuMod.mc.getNetworkHandler()).getConnection();
+        Connection connection = Objects.requireNonNull(KorppuMod.mc.getConnection()).getConnection();
 
         if (connection == null) {
             return;
@@ -57,13 +58,21 @@ public class PingSpoof extends Module {
     }
 
     @Override
+    public List<StatusEntry> getStatusEntries() {
+        return List.of(
+                StatusEntry.text("Mode", mode.getValue().name()),
+                StatusEntry.text("Ping", ping.getValue().intValue() + " ms"),
+                StatusEntry.text("Queued", saved.size() + " packets"));
+    }
+
+    @Override
     public String getStatus() {
         return String.format("%s, %dms", mode.getValue().toString().charAt(0), ping.getValue().intValue());
     }
 
     @Override
     public void onFastTick() {
-        if (KorppuMod.mc.getNetworkHandler() == null) {
+        if (KorppuMod.mc.getConnection() == null) {
             setEnabled(false);
             return;
         }
@@ -79,7 +88,7 @@ public class PingSpoof extends Module {
 
     @Listener
     public void onPacketSend(PacketEvent.Sent event) {
-        if (!isEnabled() || ModuleManager.doNotSendPackets()) {
+        if (!isEnabled() || !ModuleManager.isSendPackets()) {
             return;
         }
 
@@ -88,7 +97,7 @@ public class PingSpoof extends Module {
             return;
         }
 
-        if (mode.getValue() == Mode.Fake && (event.getPacket() instanceof KeepAliveC2SPacket || event.getPacket() instanceof CommonPongC2SPacket)) {
+        if (mode.getValue() == Mode.Fake && (event.getPacket() instanceof ServerboundKeepAlivePacket || event.getPacket() instanceof ServerboundPongPacket)) {
             saved.add(new WrappedPacket(event.getPacket(), ping.getValue(), System.currentTimeMillis()));
             event.setCancelled(true);
         } else {

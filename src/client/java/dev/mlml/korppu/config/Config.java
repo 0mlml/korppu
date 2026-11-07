@@ -1,9 +1,9 @@
 package dev.mlml.korppu.config;
 
 import lombok.Getter;
-import net.minecraft.client.gui.widget.ClickableWidget;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,15 +13,19 @@ public class Config {
     protected final List<GenericSetting<?>> settings = new ArrayList<>();
 
     public void deserialize(List<String> lines) {
-        Map<String, String> byName = lines.stream()
-                                          .collect(Collectors.toMap(s -> s.split(ConfigWriter.RECORD_SEPARATOR)[1], s -> s));
+        Map<String, String> byName = new HashMap<>();
+        for (String line : lines) {
+            String[] parts = line.split(ConfigWriter.RECORD_SEPARATOR, 3);
+            if (parts.length >= 3) {
+                byName.put(parts[1], parts[2]);
+            }
+        }
 
         for (GenericSetting<?> setting : settings) {
-            if (!byName.containsKey(setting.getName())) {
-                continue;
+            String value = byName.get(setting.getName());
+            if (value != null) {
+                setting.deserialize(value);
             }
-
-            setting.deserialize(byName.get(setting.getName()).split(ConfigWriter.RECORD_SEPARATOR)[2]);
         }
     }
 
@@ -52,13 +56,4 @@ public class Config {
         return null;
     }
 
-    public List<ClickableWidget> getAsWidgets() {
-        List<ClickableWidget> widgets = new ArrayList<>();
-
-        for (GenericSetting<?> setting : settings) {
-            widgets.add(setting.getAsWidget());
-        }
-
-        return widgets;
-    }
 }

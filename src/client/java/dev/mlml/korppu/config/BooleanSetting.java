@@ -1,10 +1,6 @@
 package dev.mlml.korppu.config;
 
-import dev.mlml.korppu.gui.ConfigScreen;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,19 +32,8 @@ public class BooleanSetting extends GenericSetting<Boolean> {
     }
 
     @Override
-    public Text asText() {
-        return Text.literal(String.format("%s: %s", getName(), getValue() ? "true" : "false"));
+    public Component asText() {
+        return Component.literal(String.format("%s: %s", getName(), getValue() ? "true" : "false"));
     }
 
-    @Override
-    public ClickableWidget getAsWidget() {
-        return ButtonWidget.builder(asText(), button -> {
-                               setValue(!getValue());
-
-                               button.setMessage(asText());
-                           })
-                           .dimensions(0, 0, ConfigScreen.DEFAULT_WIDTH, ConfigScreen.DEFAULT_HEIGHT)
-                           .tooltip(Tooltip.of(Text.literal(getTooltip())))
-                           .build();
-    }
 }

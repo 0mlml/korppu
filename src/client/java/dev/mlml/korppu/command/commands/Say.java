@@ -16,10 +16,10 @@ public class Say extends Command {
             message.append(args[i]).append(" ");
         }
 
-        if (KorppuMod.mc.getNetworkHandler() == null) {
+        if (KorppuMod.mc.getConnection() == null) {
             return;
         }
 
-        KorppuMod.mc.getNetworkHandler().sendChatMessage(message.toString());
+        KorppuMod.mc.getConnection().sendChat(message.toString());
     }
 }

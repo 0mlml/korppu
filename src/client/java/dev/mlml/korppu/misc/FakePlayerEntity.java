@@ -1,22 +1,20 @@
 package dev.mlml.korppu.misc;
 
 import dev.mlml.korppu.KorppuMod;
-import net.minecraft.client.network.OtherClientPlayerEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.client.player.RemotePlayer;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.Objects;
+import java.util.UUID;
 
-public class FakePlayerEntity extends OtherClientPlayerEntity {
+public class FakePlayerEntity extends RemotePlayer {
     public FakePlayerEntity() {
-        super(Objects.requireNonNull(KorppuMod.mc.world), Objects.requireNonNull(KorppuMod.mc.player).getGameProfile());
-        copyPositionAndRotation(KorppuMod.mc.player);
+        super(Objects.requireNonNull(KorppuMod.mc.level), Objects.requireNonNull(KorppuMod.mc.player).getGameProfile());
+        setUUID(UUID.randomUUID());
+        copyPosition(KorppuMod.mc.player);
 
         copyInventory();
-        copyPlayerModel(KorppuMod.mc.player, this);
         copyRotation();
-        resetCapeMovement();
 
         spawn();
     }
@@ -26,14 +24,7 @@ public class FakePlayerEntity extends OtherClientPlayerEntity {
             return;
         }
 
-        getInventory().clone(KorppuMod.mc.player.getInventory());
-    }
-
-    private void copyPlayerModel(Entity from, Entity to) {
-        DataTracker fromTracker = from.getDataTracker();
-        DataTracker toTracker = to.getDataTracker();
-        Byte playerModel = fromTracker.get(PlayerEntity.PLAYER_MODEL_PARTS);
-        toTracker.set(PlayerEntity.PLAYER_MODEL_PARTS, playerModel);
+        getInventory().replaceWith(KorppuMod.mc.player.getInventory());
     }
 
     private void copyRotation() {
@@ -41,22 +32,16 @@ public class FakePlayerEntity extends OtherClientPlayerEntity {
             return;
         }
 
-        headYaw = KorppuMod.mc.player.headYaw;
-        bodyYaw = KorppuMod.mc.player.bodyYaw;
-    }
-
-    private void resetCapeMovement() {
-        capeX = getX();
-        capeY = getY();
-        capeZ = getZ();
+        yHeadRot = KorppuMod.mc.player.yHeadRot;
+        yBodyRot = KorppuMod.mc.player.yBodyRot;
     }
 
     private void spawn() {
-        if (KorppuMod.mc.world == null) {
+        if (KorppuMod.mc.level == null) {
             return;
         }
 
-        KorppuMod.mc.world.addEntity(this);
+        KorppuMod.mc.level.addEntity(this);
     }
 
     public void despawn() {
@@ -67,6 +52,8 @@ public class FakePlayerEntity extends OtherClientPlayerEntity {
         if (KorppuMod.mc.player == null) {
             return;
         }
-        KorppuMod.mc.player.refreshPositionAndAngles(getX(), getY(), getZ(), getYaw(), getPitch());
+        KorppuMod.mc.player.setPos(getX(), getY(), getZ());
+        KorppuMod.mc.player.setYRot(getYRot());
+        KorppuMod.mc.player.setXRot(getXRot());
     }
 }

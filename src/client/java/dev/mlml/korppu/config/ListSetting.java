@@ -1,11 +1,8 @@
 package dev.mlml.korppu.config;
 
 import dev.mlml.korppu.KorppuMod;
-import dev.mlml.korppu.gui.ConfigScreen;
 import lombok.Getter;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.client.gui.widget.CyclingButtonWidget;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -22,19 +19,17 @@ public class ListSetting<T extends Enum<?>> extends GenericSetting<T> {
     public ListSetting(String name, String tooltip, T defaultValue, List<Consumer<T>> callbacks) {
         super(name, tooltip, defaultValue, callbacks);
 
-        if (!Modifier.isPublic(defaultValue.getClass().getModifiers())) {
+        if (!Modifier.isPublic(defaultValue.getDeclaringClass().getModifiers())) {
             throw new IllegalArgumentException("Enum must be public");
         }
 
         try {
-            this.possible = (T[]) defaultValue.getClass().getMethod("values").invoke(null);
+            this.possible = (T[]) defaultValue.getDeclaringClass().getMethod("values").invoke(null);
         } catch (Exception e) {
             throw new IllegalArgumentException("Enum must have a values() method");
         }
 
         this.possibleStrings = Arrays.stream(possible).map(Enum::name).toArray(String[]::new);
-
-        this.label = tooltip;
     }
 
     public ListSetting(String name, String tooltip, T defaultValue) {
@@ -69,17 +64,8 @@ public class ListSetting<T extends Enum<?>> extends GenericSetting<T> {
     }
 
     @Override
-    public Text asText() {
-        return Text.literal(String.valueOf(getValue()));
+    public Component asText() {
+        return Component.literal(String.valueOf(getValue()));
     }
 
-    @Override
-    public ClickableWidget getAsWidget() {
-        return CyclingButtonWidget.builder(Text::literal)
-                                  .values(possibleStrings)
-                                  .initially(getValue().name())
-                                  .build(0, 0, ConfigScreen.DEFAULT_WIDTH, ConfigScreen.DEFAULT_HEIGHT, Text.literal(getName()), (button, mode) -> {
-                                      setValueFromString(mode);
-                                  });
-    }
 }

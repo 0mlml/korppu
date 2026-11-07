@@ -1,12 +1,7 @@
 package dev.mlml.korppu.config;
 
-import dev.mlml.korppu.KorppuMod;
-import dev.mlml.korppu.gui.ConfigScreen;
 import lombok.Getter;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,17 +28,8 @@ public class StringSetting extends GenericSetting<String> {
     }
 
     @Override
-    public Text asText() {
-        return Text.literal(value);
+    public Component asText() {
+        return Component.literal(value);
     }
 
-    @Override
-    public ClickableWidget getAsWidget() {
-        TextFieldWidget textFieldWidget = new TextFieldWidget(KorppuMod.mc.textRenderer, 0, 0, ConfigScreen.DEFAULT_WIDTH, ConfigScreen.DEFAULT_HEIGHT, asText());
-        textFieldWidget.setText(value);
-        textFieldWidget.setTooltip(Tooltip.of(Text.literal(tooltip)));
-        textFieldWidget.setChangedListener(this::setValue);
-
-        return textFieldWidget;
-    }
 }

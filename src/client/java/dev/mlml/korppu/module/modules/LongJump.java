@@ -2,7 +2,6 @@ package dev.mlml.korppu.module.modules;
 
 import dev.mlml.korppu.KorppuMod;
 import dev.mlml.korppu.module.Module;
-import net.minecraft.util.math.Box;
 import org.lwjgl.glfw.GLFW;
 
 public class LongJump extends Module {
@@ -12,12 +11,12 @@ public class LongJump extends Module {
 
     @Override
     public void onTick() {
-        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null) {
+        if (KorppuMod.mc.player == null || KorppuMod.mc.level == null) {
             return;
         }
 
-       if (KorppuMod.mc.options.jumpKey.isPressed()) {
-           KorppuMod.mc.player.jump();
-       }
+        if (KorppuMod.mc.options.keyJump.isDown()) {
+            KorppuMod.mc.player.jumpFromGround();
+        }
     }
 }

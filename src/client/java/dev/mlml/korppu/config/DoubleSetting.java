@@ -1,12 +1,7 @@
 package dev.mlml.korppu.config;
 
-import dev.mlml.korppu.KorppuMod;
-import dev.mlml.korppu.gui.ConfigScreen;
 import lombok.Getter;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.util.Collections;
 import java.util.List;
@@ -73,18 +68,8 @@ public class DoubleSetting extends GenericSetting<Double> {
     }
 
     @Override
-    public Text asText() {
-        return Text.literal(value.toString());
+    public Component asText() {
+        return Component.literal(value.toString());
     }
 
-    @Override
-    public ClickableWidget getAsWidget() {
-        TextFieldWidget textFieldWidget = new TextFieldWidget(KorppuMod.mc.textRenderer, 0, 0, ConfigScreen.DEFAULT_WIDTH, ConfigScreen.DEFAULT_HEIGHT, asText());
-        textFieldWidget.setTextPredicate(s -> s.matches("^[0-9]*.?[0-9]*$"));
-        textFieldWidget.setText(value.toString());
-        textFieldWidget.setTooltip(Tooltip.of(Text.literal(tooltip)));
-        textFieldWidget.setChangedListener(this::setValueFromString);
-
-        return textFieldWidget;
-    }
 }

@@ -1,12 +1,18 @@
 plugins {
-    id 'fabric-loom' version '1.7-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
 }
 
 version = project.mod_version
 group = project.maven_group
 
-repositories {}
+loom {
+    accessWidenerPath = file("src/client/resources/korppu.accesswidener")
+}
+
+repositories {
+    mavenCentral()
+}
 
 loom {
     splitEnvironmentSourceSets()
@@ -21,20 +27,29 @@ loom {
 
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-    compileOnly 'org.projectlombok:lombok:1.18.34'
-    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+    String imguiVersion = "1.90.0"
+    implementation include("io.github.spair:imgui-java-binding:${imguiVersion}")
+    implementation include("io.github.spair:imgui-java-lwjgl3:${imguiVersion}") {
+        exclude group: "org.lwjgl"
+        exclude group: "org.lwjgl.lwjgl"
+    }
+    implementation include("io.github.spair:imgui-java-natives-linux:${imguiVersion}")
+    implementation include("io.github.spair:imgui-java-natives-windows:${imguiVersion}")
+    implementation include("io.github.spair:imgui-java-natives-macos:${imguiVersion}")
 
-    testCompileOnly 'org.projectlombok:lombok:1.18.34'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.34'
+    compileOnly 'org.projectlombok:lombok:1.18.38'
+    annotationProcessor 'org.projectlombok:lombok:1.18.38'
+
+    testCompileOnly 'org.projectlombok:lombok:1.18.38'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.38'
 }
 
 
-processResources {
+tasks.withType(ProcessResources).configureEach {
     inputs.property "version", project.version
     inputs.property "minecraft_version", project.minecraft_version
     inputs.property "loader_version", project.loader_version
@@ -42,12 +57,12 @@ processResources {
 
     filesMatching("fabric.mod.json") {
         expand "version": project.version,
-                "minecraft_version": project.version,
+                "minecraft_version": project.minecraft_version,
                 "loader_version": project.loader_version
     }
 }
 
-def targetJavaVersion = 21
+def targetJavaVersion = 25
 tasks.withType(JavaCompile).configureEach {
     it.options.encoding = "UTF-8"
     it.options.release = targetJavaVersion
@@ -58,11 +73,14 @@ java {
     if (JavaVersion.current() < javaVersion) {
         toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     }
-    archivesBaseName = project.base.archivesName.get()
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+base {
+    archivesName = project.archives_base_name
 }
 
 jar {
@@ -73,9 +91,11 @@ jar {
 
 def releaseDir = file("$buildDir/../releases")
 
-task moveJar() {
+task moveJar(type: Copy) {
     dependsOn jar
-    file("$buildDir/libs/$project.name-${project.version}.jar").renameTo(file("$releaseDir/${archivesBaseName}.jar"))
+    from jar.archiveFile
+    into releaseDir
+    rename { "${project.base.archivesName.get()}.jar" }
 }
 
 task buildAndMoveJar {

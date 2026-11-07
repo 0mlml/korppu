@@ -1,15 +1,12 @@
 package dev.mlml.korppu.config;
 
-import dev.mlml.korppu.gui.ConfigScreen;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @Getter
 @Setter
@@ -18,17 +15,27 @@ public abstract class GenericSetting<V> {
     protected final String tooltip;
     final V defaultValue;
     final List<Consumer<V>> callbacks;
-    protected String label;
     V value;
+
+    private Supplier<Boolean> visibilityCondition = null;
 
     public GenericSetting(String name, String tooltip, V defaultValue, List<Consumer<V>> callbacks) {
         this.name = name;
         this.tooltip = tooltip;
-        this.label = name;
 
         this.defaultValue = defaultValue;
         this.value = defaultValue;
         this.callbacks = callbacks;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <Self extends GenericSetting<V>> Self showOnlyIf(Supplier<Boolean> condition) {
+        this.visibilityCondition = condition;
+        return (Self) this;
+    }
+
+    public boolean isVisible() {
+        return visibilityCondition == null || visibilityCondition.get();
     }
 
     public String[] serialize() {
@@ -40,17 +47,8 @@ public abstract class GenericSetting<V> {
         this.value = (V) value;
     }
 
-    public Text asText() {
-        return Text.literal(String.format("%s: %s", name, value));
-    }
-
-    public ClickableWidget getAsWidget() {
-        return ButtonWidget.builder(Text.literal(name), button -> {
-                               System.out.printf("%s clicked%n", name);
-                           })
-                           .dimensions(0, 0, ConfigScreen.DEFAULT_WIDTH, ConfigScreen.DEFAULT_HEIGHT)
-                           .tooltip(Tooltip.of(Text.literal(tooltip)))
-                           .build();
+    public Component asText() {
+        return Component.literal(String.format("%s: %s", name, value));
     }
 
     public void setValue(V value) {

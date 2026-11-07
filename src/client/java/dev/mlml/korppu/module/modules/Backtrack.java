@@ -5,25 +5,30 @@ import dev.mlml.korppu.config.BooleanSetting;
 import dev.mlml.korppu.config.DoubleSetting;
 import dev.mlml.korppu.event.Listener;
 import dev.mlml.korppu.event.events.PacketEvent;
-import dev.mlml.korppu.gui.TextFormatter;
+import dev.mlml.korppu.imgui.windows.BacktrackControlWindow;
+import dev.mlml.korppu.imgui.windows.ModuleControlWindow;
 import dev.mlml.korppu.misc.FakePlayerEntity;
 import dev.mlml.korppu.module.Module;
 import dev.mlml.korppu.module.ModuleManager;
-import net.minecraft.network.ClientConnection;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.util.math.Vec3d;
+import dev.mlml.korppu.module.StatusEntry;
+import lombok.Getter;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.IdentityHashMap;
 
 public class Backtrack extends Module {
-    final List<PlayerMoveC2SPacket> packetBacklog = new ArrayList<>();
-    private final DoubleSetting maxItems = config.add(new DoubleSetting("Max States", "The maximum amount of states to store, trigger with Ctrl+Key", 50d, 1d, 200d, 0));
-    private final DoubleSetting seekBackAmount = config.add(new DoubleSetting("Seek Back Amount", "The amount of states to seek back, trigger with Alt+Key", 10d, 1d, 100d, 0));
+    @Getter
+    final List<ServerboundMovePlayerPacket> packetBacklog = new ArrayList<>();
+    private final DoubleSetting maxItems = config.add(new DoubleSetting("Max States", "The maximum number of movement states to buffer", 50d, 1d, 200d, 0));
+    private final DoubleSetting seekBackAmount = config.add(new DoubleSetting("Seek Back Amount", "Number of states to rewind per seek-back action", 10d, 1d, 100d, 0));
     private final BooleanSetting restoreVelocity = config.add(new BooleanSetting("Restore Velocity", "Attempt to restore velocity when possible", true));
     private final BooleanSetting onlySavePositionUpdates = config.add(new BooleanSetting("Only Save Position Updates", "Ignore \"Look Only\" packets", true));
-    private final Set<Integer> sentPackets = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<ServerboundMovePlayerPacket> sentPackets = Collections.newSetFromMap(new IdentityHashMap<>());
+    @Getter
     private boolean catchingUp = false;
     private boolean dontRestoreOnDisable = false;
 
@@ -35,32 +40,33 @@ public class Backtrack extends Module {
         KorppuMod.eventManager.register(this);
     }
 
-    public static Vec3d lerpVelocity(PlayerMoveC2SPacket last, PlayerMoveC2SPacket now) {
+    public static Vec3 lerpVelocity(ServerboundMovePlayerPacket last, ServerboundMovePlayerPacket now) {
         if (last == null || now == null || KorppuMod.mc.player == null) {
-            return Vec3d.ZERO;
+            return Vec3.ZERO;
         }
 
         double x = last.getX(KorppuMod.mc.player.getX()) - now.getX(KorppuMod.mc.player.getX());
         double y = last.getY(KorppuMod.mc.player.getY()) - now.getY(KorppuMod.mc.player.getY());
         double z = last.getZ(KorppuMod.mc.player.getZ()) - now.getZ(KorppuMod.mc.player.getZ());
-        return new Vec3d(x, y, z);
+        return new Vec3(x, y, z);
     }
 
     @Override
     public void onEnable() {
-        String key = getKeybind().getBoundKeyLocalizedText().getString();
-
-        TextFormatter.format("%1Backtrack:%4 Press %2Alt+%3%s%4 to seek back. Press %2Ctrl+%3%s%4 to begin playback. Press %3%s%4 to stop playback.", TextFormatter.Code.YELLOW, TextFormatter.Code.GREEN, TextFormatter.Code.BOLD, TextFormatter.Code.RESET, key, key, key);
+        if (KorppuMod.mc.player == null || KorppuMod.mc.level == null) {
+            setEnabled(false);
+            return;
+        }
 
         fakePlayer = new FakePlayerEntity();
     }
 
-    private void seekBack() {
+    public void seekBack() {
         if (packetBacklog.isEmpty() || seekBackAmount.getValue() > packetBacklog.size()) {
             return;
         }
 
-        PlayerMoveC2SPacket secondLast = null, last = null;
+        ServerboundMovePlayerPacket secondLast = null, last = null;
         for (int i = 0; i < seekBackAmount.getValue(); i++) {
             secondLast = last;
             last = packetBacklog.remove(packetBacklog.size() - 1);
@@ -68,27 +74,49 @@ public class Backtrack extends Module {
         moveTo(secondLast, last);
     }
 
-    private void moveTo(PlayerMoveC2SPacket last, PlayerMoveC2SPacket now) {
-        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null) {
+    public void startCatchingUp() {
+        if (KorppuMod.mc.player == null) return;
+        catchingUp = true;
+        if (fakePlayer != null) {
+            fakePlayer.setPos(KorppuMod.mc.player.getX(), KorppuMod.mc.player.getY(), KorppuMod.mc.player.getZ());
+            fakePlayer.setYRot(KorppuMod.mc.player.getYRot());
+            fakePlayer.setXRot(KorppuMod.mc.player.getXRot());
+        }
+    }
+
+    public void stopPlayback() {
+        catchingUp = false;
+    }
+
+    public double getMaxItemsValue() {
+        return maxItems.getValue();
+    }
+
+    private void moveTo(ServerboundMovePlayerPacket last, ServerboundMovePlayerPacket now) {
+        if (KorppuMod.mc.player == null || KorppuMod.mc.level == null) {
             return;
         }
 
-        KorppuMod.mc.player.updatePositionAndAngles(now.getX(KorppuMod.mc.player.getX()), now.getY(KorppuMod.mc.player.getY()), now.getZ(KorppuMod.mc.player.getZ()), now.getYaw(KorppuMod.mc.player.getYaw()), now.getPitch(KorppuMod.mc.player.getPitch()));
+        KorppuMod.mc.player.setPos(now.getX(KorppuMod.mc.player.getX()), now.getY(KorppuMod.mc.player.getY()), now.getZ(KorppuMod.mc.player.getZ()));
+        KorppuMod.mc.player.setYRot(now.getYRot(KorppuMod.mc.player.getYRot()));
+        KorppuMod.mc.player.setXRot(now.getXRot(KorppuMod.mc.player.getXRot()));
 
         if (!restoreVelocity.getValue()) {
             return;
         }
 
-        Vec3d velocity = lerpVelocity(last, now);
-        KorppuMod.mc.player.setVelocity(velocity);
+        Vec3 velocity = lerpVelocity(last, now);
+        KorppuMod.mc.player.setDeltaMovement(velocity);
     }
 
-    private void moveTo(PlayerMoveC2SPacket packet) {
-        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null) {
+    private void moveTo(ServerboundMovePlayerPacket packet) {
+        if (KorppuMod.mc.player == null || KorppuMod.mc.level == null) {
             return;
         }
 
-        KorppuMod.mc.player.updatePositionAndAngles(packet.getX(KorppuMod.mc.player.getX()), packet.getY(KorppuMod.mc.player.getY()), packet.getZ(KorppuMod.mc.player.getZ()), packet.getYaw(KorppuMod.mc.player.getYaw()), packet.getPitch(KorppuMod.mc.player.getPitch()));
+        KorppuMod.mc.player.setPos(packet.getX(KorppuMod.mc.player.getX()), packet.getY(KorppuMod.mc.player.getY()), packet.getZ(KorppuMod.mc.player.getZ()));
+        KorppuMod.mc.player.setYRot(packet.getYRot(KorppuMod.mc.player.getYRot()));
+        KorppuMod.mc.player.setXRot(packet.getXRot(KorppuMod.mc.player.getXRot()));
     }
 
     @Override
@@ -110,7 +138,7 @@ public class Backtrack extends Module {
             return;
         }
 
-        PlayerMoveC2SPacket first = packetBacklog.get(0);
+        ServerboundMovePlayerPacket first = packetBacklog.getFirst();
         packetBacklog.clear();
 
         if (KorppuMod.mc.player == null || first == null) {
@@ -122,18 +150,8 @@ public class Backtrack extends Module {
 
     @Override
     public void onTick() {
-        if (KorppuMod.mc.player == null || KorppuMod.mc.world == null) {
+        if (KorppuMod.mc.player == null || KorppuMod.mc.level == null) {
             return;
-        }
-
-        if (getModifierKeyStates().get(GLFW.GLFW_KEY_LEFT_ALT)) {
-            seekBack();
-            return;
-        }
-
-        if (getModifierKeyStates().get(GLFW.GLFW_KEY_LEFT_CONTROL)) {
-            catchingUp = true;
-            fakePlayer.updatePositionAndAngles(KorppuMod.mc.player.getX(), KorppuMod.mc.player.getY(), KorppuMod.mc.player.getZ(), KorppuMod.mc.player.getYaw(), KorppuMod.mc.player.getPitch());
         }
 
         if (catchingUp) {
@@ -144,34 +162,31 @@ public class Backtrack extends Module {
                 return;
             }
 
-            PlayerMoveC2SPacket packet = packetBacklog.remove(0);
+            ServerboundMovePlayerPacket packet = packetBacklog.removeFirst();
             if (!packetBacklog.isEmpty()) {
-                moveTo(packetBacklog.get(0), packet);
+                moveTo(packetBacklog.getFirst(), packet);
             }
             sendPacket(packet);
         }
     }
 
-    private int generatePacketIdentifier(PlayerMoveC2SPacket packet) {
-        return packet.hashCode();
-    }
-
-    private void sendPacket(PlayerMoveC2SPacket packet) {
-        if (ModuleManager.doNotSendPackets()) {
+    private void sendPacket(ServerboundMovePlayerPacket packet) {
+        if (!ModuleManager.isSendPackets()) {
             return;
         }
 
-        ClientConnection connection = Objects.requireNonNull(KorppuMod.mc.getNetworkHandler()).getConnection();
+        Connection connection = Objects.requireNonNull(KorppuMod.mc.getConnection()).getConnection();
 
         if (connection == null) {
             return;
         }
 
-        int packetId = generatePacketIdentifier(packet);
-        sentPackets.add(packetId);
+        sentPackets.add(packet);
 
         if (!catchingUp) {
-            fakePlayer.updatePositionAndAngles(packet.getX(fakePlayer.getX()), packet.getY(fakePlayer.getY()), packet.getZ(fakePlayer.getZ()), packet.getYaw(fakePlayer.getYaw()), packet.getPitch(fakePlayer.getPitch()));
+            fakePlayer.setPos(packet.getX(fakePlayer.getX()), packet.getY(fakePlayer.getY()), packet.getZ(fakePlayer.getZ()));
+            fakePlayer.setYRot(packet.getYRot(fakePlayer.getYRot()));
+            fakePlayer.setXRot(packet.getXRot(fakePlayer.getXRot()));
         }
 
         connection.send(packet);
@@ -179,47 +194,56 @@ public class Backtrack extends Module {
 
     @Override
     public String getStatus() {
-        TextFormatter.Code color = catchingUp ? TextFormatter.Code.BLUE : TextFormatter.Code.YELLOW;
-        String countStr = String.valueOf(packetBacklog.size());
-        String message = "Idle";
-        if (catchingUp) {
-            message = "Replaying";
-        } else {
-            if (isEnabled()) {
-                if (packetBacklog.size() < maxItems.getValue()) {
-                    message = "Standby";
-                } else {
-                    if (packetBacklog.size() == maxItems.getValue()) {
-                        message = "Trailing";
-                    }
-                }
-            }
-        }
-        return TextFormatter.format("%1%s [%s]", color, message, countStr);
+        String message = catchingUp ? "Replaying"
+                : packetBacklog.size() >= maxItems.getValue() ? "Trailing"
+                : "Standby";
+        return message + " [" + packetBacklog.size() + "]";
+    }
+
+    @Override
+    public List<StatusEntry> getStatusEntries() {
+        String state = catchingUp ? "Replaying"
+                : packetBacklog.size() >= maxItems.getValue() ? "Trailing"
+                : "Standby";
+        int size = packetBacklog.size();
+        int max = maxItems.getValue().intValue();
+        return List.of(
+                StatusEntry.text("State", state),
+                StatusEntry.bar("Backlog", size + " / " + max, (float) size / Math.max(1, max))
+        );
+    }
+
+    @Override
+    public boolean hasControlWindow() {
+        return true;
+    }
+
+    @Override
+    public ModuleControlWindow createControlWindow() {
+        return new BacktrackControlWindow(this);
     }
 
     @Listener
     public void onPacket(PacketEvent.Sent event) {
-        if (!isEnabled() || KorppuMod.mc.player == null || KorppuMod.mc.getNetworkHandler() == null || catchingUp) {
+        if (!isEnabled() || KorppuMod.mc.player == null || KorppuMod.mc.getConnection() == null || catchingUp) {
             return;
         }
 
-        if (event.getPacket() instanceof PlayerMoveC2SPacket packet) {
-            if (sentPackets.contains(generatePacketIdentifier(packet))) {
-                sentPackets.remove(generatePacketIdentifier(packet));
+        if (event.getPacket() instanceof ServerboundMovePlayerPacket packet) {
+            if (sentPackets.remove(packet)) {
                 return;
             }
 
             event.setCancelled(true);
 
-            if (onlySavePositionUpdates.getValue() && !packet.changesPosition()) {
+            if (onlySavePositionUpdates.getValue() && !packet.hasPosition()) {
                 return;
             }
 
             packetBacklog.add(packet);
 
             while (packetBacklog.size() > maxItems.getValue()) {
-                PlayerMoveC2SPacket removed = packetBacklog.remove(0);
+                ServerboundMovePlayerPacket removed = packetBacklog.removeFirst();
 
                 sendPacket(removed);
             }

@@ -4,9 +4,16 @@ import dev.mlml.korppu.KorppuMod;
 import dev.mlml.korppu.module.Module;
 import dev.mlml.korppu.module.ModuleManager;
 
-import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ConfigWriter {
     public static final String SchemaVersion = "1";
@@ -31,15 +38,54 @@ public class ConfigWriter {
         return config.toString();
     }
 
+    private static String[] payloadSegments(String config) {
+        int newline = config.indexOf('\n');
+        if (newline < 0 || newline == config.length() - 1) {
+            KorppuMod.LOGGER.warn("Invalid config format: missing payload.");
+            return null;
+        }
+
+        String header = config.substring(0, newline).trim();
+        if (!header.startsWith("Korppu ")) {
+            KorppuMod.LOGGER.warn("Invalid config header: {}", header);
+            return null;
+        }
+
+        return config.substring(newline + 1).split(GROUP_SEPARATOR, -1);
+    }
+
+    /**
+     * Flattens a serialized config into "Module" -> enabled and "Module/Setting" -> value entries, in file order.
+     */
+    public static Map<String, String> flatten(String config) {
+        Map<String, String> entries = new LinkedHashMap<>();
+        String[] segments = payloadSegments(config);
+        if (segments == null) return entries;
+
+        String currentModule = null;
+        for (String segment : segments) {
+            String[] parts = segment.split(RECORD_SEPARATOR, 3);
+            if (parts.length < 3) continue;
+
+            if (parts[0].equals("m")) {
+                currentModule = parts[1];
+                entries.put(currentModule, parts[2]);
+            } else if (currentModule != null) {
+                entries.put(currentModule + "/" + parts[1], parts[2].replace(UNIT_SEPARATOR, ", "));
+            }
+        }
+        return entries;
+    }
+
     public static void deserializeConfig(String config) {
-        String[] lines = config.split("\n");
-        String[] segments = lines[1].split(GROUP_SEPARATOR);
+        String[] segments = payloadSegments(config);
+        if (segments == null) return;
 
         Module currentModule = null;
         List<String> moduleLines = new ArrayList<>();
 
         for (String segment : segments) {
-            String[] parts = segment.split(RECORD_SEPARATOR);
+            String[] parts = segment.split(RECORD_SEPARATOR, -1);
 
             if (parts.length < 3) {
                 continue;
@@ -77,22 +123,15 @@ public class ConfigWriter {
     }
 
     public static void readConfigFromFile(String filename) {
-        File file = new File(filename);
+        Path file = Path.of(filename);
 
-        if (!file.exists()) {
+        if (!Files.exists(file)) {
             KorppuMod.LOGGER.warn("Config file does not exist");
             return;
         }
 
         try {
-            java.io.FileReader fr = new java.io.FileReader(file);
-            StringBuilder config = new StringBuilder();
-            int c;
-            while ((c = fr.read()) != -1) {
-                config.append((char) c);
-            }
-            fr.close();
-            deserializeConfig(config.toString());
+            deserializeConfig(Files.readString(file, StandardCharsets.UTF_8));
         } catch (Exception e) {
             KorppuMod.LOGGER.error("Failed to read config from file:", e);
         }
@@ -103,16 +142,20 @@ public class ConfigWriter {
     }
 
     public static void writeConfigToFile(String filename) {
-        String config = generateConfig();
-
-        File file = new File(filename);
-
         try {
-            java.io.FileWriter fw = new java.io.FileWriter(file);
-            fw.write(config);
-            fw.close();
+            writeAtomically(Path.of(filename), generateConfig());
         } catch (Exception e) {
-            KorppuMod.LOGGER.error("Failed to write config to file: {}", e.getMessage());
+            KorppuMod.LOGGER.error("Failed to write config to file:", e);
+        }
+    }
+
+    public static void writeAtomically(Path file, String content) throws IOException {
+        Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
+        Files.writeString(tmp, content, StandardCharsets.UTF_8);
+        try {
+            Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 }
